@@ -67,6 +67,6 @@ int sc_main(int argc, char* argv[])
     // set simulation end time
 
 
-    sc_start(4, SC_NS);
+    sc_start(150, SC_NS);
     return 0;
 }

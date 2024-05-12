@@ -135,18 +135,21 @@ SC_MODULE(CORE)
                 req_tx.write(true);
 
                 wait();
-                // display the flit that is sent
-                cout << "Flit " << i << " sent: " << flit_tx << endl;
-                // display ack and req
-                cout << "Ack: " << ack_tx.read() << " Req: " << req_tx << endl;
+
                 // wait for ack signal and the handshake
                 while (!(ack_tx.read() && req_tx.read()))
                 {
                     wait();
                 }
-                req_tx.write(false);
+
+                // display the flit that is sent
+                cout << "Flit " << i << " sent: " << flit_tx << endl;
+                // display ack and req
+                cout << "Ack: " << ack_tx.read() << " Req: " << req_tx << endl;
+
                 wait();
             }
+            req_tx.write(false);
 
             // print flit done only once in the outer for loop
             cout << "Flit sent done!" << endl;
