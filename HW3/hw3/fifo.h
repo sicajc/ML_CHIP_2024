@@ -61,7 +61,6 @@ void fifo::print_fifo()
     // if first bit of flit is 1, it is a header flit, then dont print it as float
     if(temp[33] == 1)
     {
-
       cout <<"Header: "<<temp << endl;
     } else
     {

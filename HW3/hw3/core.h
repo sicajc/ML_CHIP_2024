@@ -37,11 +37,11 @@ SC_MODULE(CORE)
         flit_counts = p->datas.size();
 
         // print out the packet and their data
-        cout << "Packet from PE " << p->source_id << " to PE " << p->dest_id << " is received." << endl;
-        for (int i = 0; i < 5; i++)
-        {
-            cout << "Data " << i << ": " << p->datas[i] << endl;
-        }
+        // cout << "Packet from PE " << p->source_id << " to PE " << p->dest_id << " is received." << endl;
+        // for (int i = 0; i < 5; i++)
+        // {
+        //     cout << "Data " << i << ": " << p->datas[i] << endl;
+        // }
 
         sc_lv<34> data[flit_counts + 1];
 
@@ -80,7 +80,7 @@ SC_MODULE(CORE)
         int dst_y = p->dest_id / 4;
 
         // print out the destination x and y
-        cout << "Destination X: " << dst_x << " Destination Y: " << dst_y << endl;
+        // cout << "Destination X: " << dst_x << " Destination Y: " << dst_y << endl;
 
         //place dst_x and dst_y into the header flit
         data[0].range(13, 10) = dst_x;

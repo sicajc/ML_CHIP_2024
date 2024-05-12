@@ -187,17 +187,19 @@ SC_MODULE(Router)
                 }
                 break;
             case (G_ACTIVE):
-                // if fifo is full keep waiting for available slots
-                while(in_fifo_core.full == true)
+
+                if (in_fifo_core.full == true)
                 {
                     cout << "Fifo is full" << endl;
                     out_ack[Core].write(false);
-                    wait();
                 }
-                out_ack[Core].write(true);
+                else
+                {
+                    out_ack[Core].write(true);
+                }
 
                 // waiting for handshake to complete to the send resource to compelete
-                while (out_ack[Core].read() == false || in_req[Core].read() == false)
+                while (in_req[Core].read() == false)
                 {
                     // wait for the handshake to complete
                     cout << "Waiting for handshake to complete" << endl;
@@ -210,10 +212,11 @@ SC_MODULE(Router)
                 in_fifo_core.flit_in(in_flit[Core].read());
                 wait();
 
-                // take out values from fifo
-                if(g_out_state_E == O_ACTIVE)
+                // take out values from fifo and allows other port to write fifo
+                if (g_out_state_E == O_ACTIVE)
                 {
                     in_fifo_core.flit_out();
+                    out_ack[Core].write(true);
                 }
 
                 c_g_in_state = G_ACTIVE;
@@ -227,6 +230,14 @@ SC_MODULE(Router)
 
     void east_out_buffer()
     {
+        sc_lv<34> test_temp_buf_out[100];
+        // initial all test_temp_buf to 0
+        for (int i = 0; i < 100; i++)
+        {
+            test_temp_buf_out[i] = 0;
+        }
+
+        int cnt = 0;
         // Release the resource once the tail has been sent out
         for (;;)
         {
@@ -242,7 +253,7 @@ SC_MODULE(Router)
                 break;
             case (O_ACTIVE):
                 // permits sending data
-                out_ack[East].write(1);
+                out_req[East].write(1);
                 // take data out from the granted source
                 switch (e_out_source)
                 {
@@ -256,16 +267,55 @@ SC_MODULE(Router)
                     // out_buf_east = out_flit[South].read();
                     break;
                 case Core:
+                    // the value taken out is stored to the buffer
                     out_buf_east = in_fifo_core.regs[0];
                     break;
                 default:
                     break;
                 }
+
+                // handshake does not complete, wait for in_ack for the east port
+                if (out_req[East].read() == 0 || in_ack[East].read() == 0)
+                    g_out_state_E = O_WAITING_ACK;
+                else
+                    g_out_state_E = O_ACTIVE;
+
+                break;
+            case (O_WAITING_ACK):
+                // waiting for output ack signal
+                cout << "Waiting for output ack signal" << endl;
+
+                // wait for the ack signal to be received
+                if (out_req[East].read() == 1)
+                {
+                    // if ack signal is received, then move to the next state
+                    g_out_state_E = O_ACTIVE;
+                    cnt++;
+                }
                 break;
             }
+
             // display current state of buffer
-            // cout << "Current state of east buffer: " << g_out_state_E << endl;
-            // cout << "current buffer data: " << out_buf_east << endl;
+            cout << "Current state of east buffer: " << g_out_state_E << endl;
+            cout << "current buffer data: " << out_buf_east << endl;
+            // store the buffer value up into an array
+            test_temp_buf_out[cnt] = out_buf_east;
+
+            // display this test_temp_buf
+            cout << "buffer data" << endl;
+            cout << "cnt value: " << cnt << endl;
+            for (int i = 0; i < cnt; i++)
+            {
+                if (i == 0)
+                    cout << "Header: " << test_temp_buf_out[0] << endl;
+                else
+                {
+                    cout << "Body: ";
+                    cout << sc_lv_to_float(test_temp_buf_out[i].range(31, 0)) << " ";
+                }
+            }
+            cout << endl;
+
             wait();
         }
     }
@@ -390,12 +440,16 @@ SC_MODULE(Router)
     SC_CTOR(Router)
     {
         SC_THREAD(core_in_fifo);
+        dont_initialize();
         sensitive << clk.pos();
         SC_THREAD(west_in_fifo);
+        dont_initialize();
         sensitive << clk.pos();
         SC_THREAD(east_out_buffer);
+        dont_initialize();
         sensitive << clk.pos();
         SC_THREAD(arbiter);
+        dont_initialize();
         sensitive << clk.pos();
     }
 };
