@@ -1,0 +1,249 @@
+Magic 271485
+Revision Verdi_P-2019.06
+
+; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
+viewPort 8 31 1920 1009 244 65
+
+; File list:
+; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
+openDirFile -d / "" "/RAID2/COURSE/mlchip/mlchip147/HW3/wave.vcd" "/RAID2/COURSE/mlchip/mlchip147/HW3/wave.vcd.fsdb"
+
+; file time scale:
+; fileTimeScale ### s|ms|us|ns|ps
+
+; signal spacing:
+signalSpacing 5
+
+; windowTimeUnit is used for zoom, cursor & marker
+; waveform viewport range
+zoom 0.000000 205988.535032
+cursor 0.000000
+marker 0.000000
+
+; user define markers
+; userMarker time_pos marker_name color linestyle
+; visible top row signal index
+top 0
+; marker line index
+markerPos 171
+
+; event list
+; addEvent event_name event_expression
+; curEvent event_name
+
+
+
+COMPLEX_EVENT_BEGIN
+
+
+COMPLEX_EVENT_END
+
+
+
+; toolbar current search type
+; curSTATUS search_type
+curSTATUS ByChange
+
+
+addGroup "Core_0"
+addSubGroup "Core_0-1" -e FALSE
+activeDirFile "" "/RAID2/COURSE/mlchip/mlchip147/HW3/wave.vcd.fsdb"
+addSignal -h 15 -UNSIGNED -HEX /SystemC/core_0/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+endSubGroup "Core_0-1"
+addSignal -h 15 /SystemC/core_0/clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_1"
+addSignal -h 15 /SystemC/core_1/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_2"
+addSignal -h 15 /SystemC/core_2/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_3"
+addSignal -h 15 /SystemC/core_3/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_4"
+addSignal -h 15 /SystemC/core_4/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_5"
+addSignal -h 15 /SystemC/core_5/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_6"
+addSignal -h 15 /SystemC/core_6/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_7"
+addSignal -h 15 /SystemC/core_7/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_8"
+addSignal -h 15 /SystemC/core_8/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_9"
+addSignal -h 15 /SystemC/core_9/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_10"
+addSignal -h 15 /SystemC/core_10/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_11"
+addSignal -h 15 /SystemC/core_11/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_12"
+addSignal -h 15 /SystemC/core_12/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_13"
+addSignal -h 15 /SystemC/core_13/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_14"
+addSignal -h 15 /SystemC/core_14/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "Core_15"
+addSignal -h 15 /SystemC/core_15/flit_rx[33:0]
+addSignal -h 15 -holdScope req_rx
+addSignal -h 15 -holdScope ack_rx
+addSignal -h 15 -holdScope clk
+addSignal -h 15 -holdScope flit_tx[33:0]
+addSignal -h 15 -holdScope req_tx
+addSignal -h 15 -holdScope ack_tx
+addGroup "G17"
+addSignal -h 15 /SystemC/router_0/out_flit_0[33:0]
+addSignal -h 15 -holdScope out_flit_1[33:0]
+addSignal -h 15 -holdScope out_flit_2[33:0]
+addSignal -h 15 -holdScope out_flit_3[33:0]
+addSignal -h 15 -holdScope out_flit_4[33:0]
+addSignal -h 15 /SystemC/router_1/out_flit_0[33:0]
+addSignal -h 15 -holdScope out_flit_1[33:0]
+addSignal -h 15 -holdScope out_flit_2[33:0]
+addSignal -h 15 -holdScope out_flit_3[33:0]
+addSignal -h 15 -holdScope out_flit_4[33:0]
+addGroup "G18"
+addSignal -h 15 /SystemC/router_0/clk
+addSignal -h 15 -holdScope in_ack_0
+addSignal -h 15 -holdScope in_ack_1
+addSignal -h 15 -holdScope in_ack_2
+addSignal -h 15 -holdScope in_ack_3
+addSignal -h 15 -holdScope in_ack_4
+addSignal -h 15 -holdScope in_flit_0[33:0]
+addSignal -h 15 -holdScope in_flit_1[33:0]
+addSignal -h 15 -holdScope in_flit_2[33:0]
+addSignal -h 15 -holdScope in_flit_3[33:0]
+addSignal -h 15 -holdScope in_flit_4[33:0]
+addSignal -h 15 -holdScope in_req_0
+addSignal -h 15 -holdScope in_req_1
+addSignal -h 15 -holdScope in_req_2
+addSignal -h 15 -holdScope in_req_3
+addSignal -h 15 -holdScope in_req_4
+addSignal -h 15 -holdScope out_ack_0
+addSignal -h 15 -holdScope out_ack_1
+addSignal -h 15 -holdScope out_ack_2
+addSignal -h 15 -holdScope out_ack_3
+addSignal -h 15 -holdScope out_ack_4
+addSignal -h 15 -holdScope out_flit_0[33:0]
+addSignal -h 15 -holdScope out_flit_1[33:0]
+addSignal -h 15 -holdScope out_flit_2[33:0]
+addSignal -h 15 -holdScope out_flit_3[33:0]
+addSignal -h 15 -holdScope out_flit_4[33:0]
+addSignal -h 15 -holdScope out_req_0
+addSignal -h 15 -holdScope out_req_1
+addSignal -h 15 -holdScope out_req_2
+addSignal -h 15 -holdScope out_req_3
+addSignal -h 15 -holdScope out_req_4
+addGroup "G19"
+
+; getSignalForm Scope Hierarchy Status
+; active file of getSignalForm
+activeDirFile "" "/RAID2/COURSE/mlchip/mlchip147/HW3/wave.vcd.fsdb"
+
+GETSIGNALFORM_SCOPE_HIERARCHY_BEGIN
+getSignalForm close
+
+"/SystemC"
+"/SystemC/core_12"
+"/SystemC/core_14"
+"/SystemC/router_0"
+
+SCOPE_LIST_BEGIN
+"/SystemC"
+"/SystemC/core_14"
+"/SystemC/core_12"
+"/SystemC/core_0"
+"/SystemC/core_1"
+"/SystemC/router_0"
+"/SystemC/router_1"
+"/SystemC/router_15"
+SCOPE_LIST_END
+
+GETSIGNALFORM_SCOPE_HIERARCHY_END
+
+
