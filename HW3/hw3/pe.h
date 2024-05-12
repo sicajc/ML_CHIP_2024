@@ -34,5 +34,4 @@ private:
     vector<Packet> send_packets;
     vector<Packet> recv_packets;
 };
-
 #endif

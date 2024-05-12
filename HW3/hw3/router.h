@@ -4,7 +4,6 @@
 #include "systemc.h"
 #include "USER_DEFINED_PARAM.h"
 #include "fifo.h"
-#include "fifo.cpp"
 
 SC_MODULE(Router)
 {
@@ -29,14 +28,9 @@ SC_MODULE(Router)
     sc_in<bool> in_req[5];
     sc_out<bool> out_ack[5];
 
-    // Encode
-    // 0: North, 1: East, 2: South, 3: West, 4: Core
-    const int North = 0;
-    const int East = 1;
-    const int South = 2;
-    const int West = 3;
-    const int Core = 4;
-
+    //=============================================================================
+    // in fifos
+    //=============================================================================
     // Declare fifo of size 5 for each direction, using primitive array
     // dont use interface or channel
     fifo in_fifo_north;
@@ -45,13 +39,6 @@ SC_MODULE(Router)
     fifo in_fifo_west;
     fifo in_fifo_core;
 
-    // fifo control states (G)
-    const int G_IDLE = 0;
-    const int G_ROUTING = 1;
-    const int G_WAITING_OUTPUT = 2;
-    const int G_ACTIVE = 3;
-    const int G_WAITING_ACK = 4;
-
     // in fifo states
     int w_g_in_state = 0;
     int e_g_in_state = 0;
@@ -59,6 +46,9 @@ SC_MODULE(Router)
     int s_g_in_state = 0;
     int c_g_in_state = 0;
 
+    //=============================================================================
+    // in buffers
+    //=============================================================================
     // output buffer
     sc_signal<flit_size_t> out_buf_north;
     sc_signal<flit_size_t> out_buf_south;
@@ -72,12 +62,9 @@ SC_MODULE(Router)
     int g_out_state_S = 0;
     int g_out_state_C = 0;
 
-    // output buffer state
-    const int O_IDLE = 0;
-    const int O_WAITING_ACK = 1;
-    const int O_ACTIVE = 2;
-    const int O_DONE = 3;
-
+    //=============================================================================
+    // arbiters
+    //=============================================================================
     // Arbiter inputs
     // 5 directions thus need 5 possible values
     int n_req_e = 0;
@@ -199,18 +186,18 @@ SC_MODULE(Router)
             case (O_IDLE):
                 if (out_req[East].read() == 1)
                 {
-                    i_out_state = O_WAITING_ACK;
+
                 }
                 break;
             case (O_WAITING_ACK):
                 if (in_ack[East].read() == 1)
                 {
-                    i_out_state = O_ACTIVE;
+
                 }
                 break;
             case (O_ACTIVE):
                 out_ack[East].write(1);
-                i_out_state = O_IDLE;
+
                 break;
             }
 
@@ -289,6 +276,18 @@ SC_MODULE(Router)
 
             wait();
         }
+    }
+
+    SC_CTOR(Router)
+    {
+        SC_THREAD(core_in_fifo);
+        sensitive << clk.pos();
+        SC_THREAD(west_in_fifo);
+        sensitive << clk.pos();
+        SC_THREAD(east_out_buffer);
+        sensitive << clk.pos();
+        SC_THREAD(arbiter);
+        sensitive << clk.pos();
     }
 };
 
