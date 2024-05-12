@@ -4,6 +4,7 @@
 // must update the Fifo such that it can support simultaneous read and write
 
 #include <USER_DEFINED_PARAM.h>
+#include <helperfunction.h>
 
 template <typename T, size_t N>
 class Fifo {
@@ -55,13 +56,29 @@ public:
     }
 
     void display() const {
-        std::cout << "Current FIFO contents: ";
+        std::cout << "Current FIFO contents: \n";
         if (isEmpty()) {
             std::cout << "Empty";
         } else {
             size_t i = head;
             while (i != tail) {
-                std::cout << data[i] << " ";
+                // std::cout << data[i] << " ";
+                // modify to display the data in fifo
+                T flit = data[i];
+                sc_lv<32> flit_data = flit.range(31, 0);
+
+                if(flit[33] == 1)
+                {
+                    std::cout << "Head flit: " << flit << std::endl;
+                }
+                else
+                {
+                    //display float value
+                    std::cout << "Body flit: " << sc_lv_to_float(flit) << std::endl;
+
+                }
+
+
                 i = (i + 1) % N;
             }
         }

@@ -69,7 +69,7 @@ int sc_main(int argc, char *argv[])
     sc_trace_file *tf = sc_create_vcd_trace_file("wave");
     sc_trace(tf, clk, "clk");
     sc_trace(tf, rst, "rst");
-    sc_start(80, SC_NS);
+    sc_start(100, SC_NS);
 
     sc_close_vcd_trace_file(tf);
     return 0;

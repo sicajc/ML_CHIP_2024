@@ -134,8 +134,6 @@ SC_MODULE(CORE)
                 flit_tx.write(flit_to_write);
                 req_tx.write(true);
 
-                wait();
-
                 // wait for ack signal and the handshake
                 while (!(ack_tx.read() && req_tx.read()))
                 {

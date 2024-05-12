@@ -35,11 +35,11 @@ SC_MODULE(Router)
     // Declare fifo of size 5 for each direction, using primitive array
     // dont use interface or channel
     // instantitate fifo with length 5
-    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_north;
-    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_south;
-    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_east;
-    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_west;
-    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_core;
+    Fifo<flit_size_t, BUFFER_SIZE> in_fifo_north;
+    Fifo<flit_size_t, BUFFER_SIZE> in_fifo_south;
+    Fifo<flit_size_t, BUFFER_SIZE> in_fifo_east;
+    Fifo<flit_size_t, BUFFER_SIZE> in_fifo_west;
+    Fifo<flit_size_t, BUFFER_SIZE> in_fifo_core;
 
     int in_fifo_north_ptr = 0;
     int in_fifo_south_ptr = 0;
@@ -53,6 +53,13 @@ SC_MODULE(Router)
     int n_g_in_state = 0;
     int s_g_in_state = 0;
     int c_g_in_state = 0;
+
+    // in fifo tail flag
+    int w_tail = 0;
+    int e_tail = 0;
+    int n_tail = 0;
+    int s_tail = 0;
+    int c_tail = 0;
 
     //=============================================================================
     // in buffers
@@ -97,6 +104,7 @@ SC_MODULE(Router)
     void core_in_fifo()
     {
         int port_selected;
+        c_g_in_state = G_IDLE;
 
         for (;;)
         {
@@ -104,259 +112,146 @@ SC_MODULE(Router)
             switch (c_g_in_state)
             {
             case (G_IDLE):
-                if (in_req[Core].read() == true)
+                // Wait for req from core
+                while (in_req[Core].read() == false)
                 {
-                    // send ack signal to the the core
-                    out_ack[Core].write(true);
+                    wait();
+                }
+                // Send ack back to core
+                out_ack[Core].write(true);
+                // receive the header
+                in_fifo_core.enqueue(in_flit[Core].read());
 
-                    // if handshake is successful, then move to the next state and update fifo and states
-                    while (in_req[Core].read() == false || out_ack[Core].read() == false)
-                    {
-                        // wait for the handshake to complete
-                        cout << "Waiting for handshake to complete" << endl;
-                        wait();
-                    }
-                    out_ack[Core].write(false);
+                // jump to Routing stage
+                c_g_in_state = G_ROUTING;
+                break;
+            case (G_ROUTING):
+            {
+                int x_disp = in_flit[Core].read().range(23, 19).to_int();
+                int y_disp = in_flit[Core].read().range(18, 14).to_int();
+                int dst_x = in_flit[Core].read().range(13, 10).to_uint();
+                int dst_y = in_flit[Core].read().range(9, 6).to_uint();
+                int new_x;
+                int new_y;
 
-                    // read in the header flit and decompose it to update the routing information
-                    sc_lv<34> new_header = in_flit[Core].read();
-                    int x_disp = in_flit[Core].read().range(23, 19).to_int();
-                    int y_disp = in_flit[Core].read().range(18, 14).to_int();
-                    int dst_x = in_flit[Core].read().range(13, 10).to_uint();
-                    int dst_y = in_flit[Core].read().range(9, 6).to_uint();
-                    int new_x;
-                    int new_y;
+                // Check the front of fifo, see if it is header
+                flit_size_t front_flit = in_fifo_core.front();
 
+                // select the MSB of flit
+                // int msb;
+                // front_flit[33];
+                int msb = front_flit[33] == 1;
+                if (msb == 1) // means this is header
+                {
+                    // dequeue the fifo getting header
+                    flit_size_t new_header = in_fifo_core.dequeue();
+                    // check if the flit is header
+                    new_header = front_flit;
+                    // Decompose the header
+                    // Determine the output port
                     port_selected = get_direction(x_disp, y_disp);
-                    // get new direction, route the port, wait for the permission to the selected port granted
-                    // compute new x,y
                     get_new_xy(x_disp, y_disp, new_x, new_y);
 
-                    // display information
-                    // cout << "=====================================================" << endl;
-                    // cout << "Header flit: " << in_flit[Core].read() << endl;
-                    // cout << "Source ID: " << in_flit[Core].read().range(31, 28).to_uint() << endl;
-                    // cout << "Destination ID: " << in_flit[Core].read().range(27, 24).to_uint() << endl;
-                    // cout << "Signed X displacement vector: " << x_disp << endl;
-                    // cout << "Signed Y displacement vector: " << y_disp << endl;
-                    // cout << "Destination X: " << dst_x << endl;
-                    // cout << "Destination Y: " << dst_y << endl;
-                    // cout << "New X: " << new_x << endl;
-                    // cout << "New Y: " << new_y << endl;
-                    // cout << "Port Selected: " << port_selected << endl;
-                    // cout << "=====================================================" << endl;
-
-                    // update the header's displacement vector
+                    // update this new header
                     new_header.range(23, 19) = new_x;
                     new_header.range(18, 14) = new_y;
 
-                    // Updates the states
-                    c_g_in_state = G_ROUTING;
-
-                    // put this header into fifo
-                    in_fifo_core.enqueue(new_header) ;
-
-                    // print fifo
-
+                    // Enqueue the data back to fifo
+                    in_fifo_core.enqueue(new_header);
                 }
-                break;
-            case (G_ROUTING):
+
+                // Ask arbiter for the desired port, if permission granted leave the state
+                // determine which port to go, and send request to that port, now only east port first
+                c_req_e = 1;
+
+                // If input handshake available and fifo is not full, put new data into fifo
                 if (in_fifo_core.isFull() == false)
                 {
-                    // 4 possible ports, for the selected port, route the flit to the port
-                    // wait for request grant
-                    switch (port_selected)
-                    {
-                    case North:
-                        // c_req_n = 1;
-                        break;
-                    case East:
-                        c_req_e = 1;
-                        // wait for east grant west
-                        while (e_grant_c == 0)
-                        {
-                            // wait for east grant west
-                            cout << "Waiting for east grant core" << endl;
-                            wait();
-                        }
-                        break;
-                    case South:
-                        // c_req_s = 1;
-                        break;
-                    case West:
-                        // c_req_w = 1;
-                        break;
-                    default:
-                        break;
-                    }
+                    out_ack[Core].write(false);
+                }
+                else if (in_req[Core].read() == true && out_ack[Core].read() == true)
+                {
+                    // put data into queue
+                    in_fifo_core.enqueue(in_flit[Core].read());
+                    out_ack[Core].write(true);
+                }
 
+                // wait for the request grantted by the arbiter
+                if (c_req_e == 1 && e_grant_c == 1)
+                {
                     c_g_in_state = G_ACTIVE;
                 }
-                break;
-            case (G_ACTIVE):
-                // Aim for examples
-                // 1. check fifo full ->
-                if(in_fifo_core.full == true)
+                else
                 {
-                    // put the body flit into the fifo
-                    in_fifo_core.flit_in(in_flit[Core].read());
-                    c_g_in_state = G_WAITING_OUTPUT;
-                    out_ack[Core].write(false);
-                } else
+                    c_g_in_state = G_ROUTING;
+                }
+
+                // if the fifo request send the ack back to allow transfer
+                if (in_req[Core].read() == true)
                 {
                     out_ack[Core].write(true);
                 }
-                wait();
-
-                // 2. take data out from fifo if buffer has slot, output buffer
-
-                break;
-            case (G_WAITING_OUTPUT):
-                // look for example also
-                break;
-            case (G_WAITING_ACK):
-                break;
-            case (G_FULL):
                 break;
             }
-
-            // cout << "current state of core fifo : " << c_g_in_state << endl;
-            in_fifo_core.display();
-            wait();
-        }
-    }
-
-    void east_out_buffer()
-    {
-        sc_lv<34> test_temp_buf_out[100];
-        // initial all test_temp_buf to 0
-        for (int i = 0; i < 100; i++)
-        {
-            test_temp_buf_out[i] = 0;
-        }
-
-        int cnt = 0;
-        // Release the resource once the tail has been sent out
-        for (;;)
-        {
-            // controller for output buffer
-            switch (g_out_state_E)
-            {
-            case (O_IDLE):
-                if (e_grant_w == 1 || e_grant_n == 1 || e_grant_s == 1 || e_grant_c == 1)
-                {
-                    // if the arbiter grant one of the reqest, then move to the next state
-                    g_out_state_E = O_ACTIVE;
-                }
-                break;
-            case (O_ACTIVE):
-                // permits sending data
-                out_req[East].write(1);
-                // take data out from the granted source
-                switch (e_out_source)
-                {
-                case West:
-                    // out_buf_east = out_flit[West].read();
-                    break;
-                case North:
-                    // out_buf_east = out_flit[North].read();
-                    break;
-                case South:
-                    // out_buf_east = out_flit[South].read();
-                    break;
-                case Core:
-                    // the value taken out is stored to the buffer
-                    out_buf_east = in_fifo_core.regs[0];
-                    break;
-                default:
-                    break;
-                }
-
-                // handshake does not complete, wait for in_ack for the east port
-                if (out_req[East].read() == 0 || in_ack[East].read() == 0)
-                    g_out_state_E = O_WAITING_ACK;
-                else
-                    g_out_state_E = O_ACTIVE;
-
-                break;
-            case (O_WAITING_ACK):
-                // waiting for output ack signal
-                cout << "Waiting for output ack signal" << endl;
-
-                // wait for the ack signal to be received
-                if (out_req[East].read() == 1)
-                {
-                    // if ack signal is received, then move to the next state
-                    g_out_state_E = O_ACTIVE;
-                    cnt++;
-                }
-                break;
-            }
-
-            // display current state of buffer
-            cout << "Current state of east buffer: " << g_out_state_E << endl;
-            cout << "current buffer data: " << out_buf_east << endl;
-            // store the buffer value up into an array
-            test_temp_buf_out[cnt] = out_buf_east;
-
-            // display this test_temp_buf
-            cout << "buffer data" << endl;
-            cout << "cnt value: " << cnt << endl;
-            for (int i = 0; i < cnt; i++)
-            {
-                if (i == 0)
-                    cout << "Header: " << test_temp_buf_out[0] << endl;
-                else
-                {
-                    cout << "Body: ";
-                    cout << sc_lv_to_float(test_temp_buf_out[i].range(31, 0)) << " ";
-                }
-            }
-            cout << endl;
-
-            wait();
-        }
-    }
-
-    // First code out west and east then test it
-    void west_in_fifo()
-    {
-        for (;;)
-        {
-            // west input fifo controller Global(G), Output Port selected(R), Also indicates if Empty or full
-            switch (w_g_in_state)
-            {
-            case (G_IDLE):
-                if (in_req[West].read() == 1)
-                {
-                    w_g_in_state = G_ROUTING;
-                }
-                break;
-            case (G_ROUTING):
-                if (in_fifo_west.full == 0)
-                {
-                    in_fifo_west.flit_in(in_flit[West].read());
-                    w_g_in_state = G_WAITING_OUTPUT;
-                }
-                break;
-            case (G_WAITING_OUTPUT):
-                if (out_req[West].read() == 1)
-                {
-                    w_g_in_state = G_ACTIVE;
-                }
-                break;
             case (G_ACTIVE):
-                out_flit[West].write(in_fifo_west.flit_out());
-                out_ack[West].write(1);
-                w_g_in_state = G_WAITING_ACK;
-                break;
-            case (G_WAITING_ACK):
-                if (in_ack[West].read() == 1)
+            {
+                // check output handshake, if available, send the data to the marked port
+                // check if empty then send the req signal to the next router
+                flit_size_t front_flit = in_fifo_core.front();
+
+                c_tail = front_flit[32] == 1;
+                // note since right now, the out_req is always false.
+                if (in_fifo_core.isEmpty() == false && out_req[port_selected].read() == true)
                 {
-                    w_g_in_state = G_IDLE;
+                    out_flit[port_selected].write(in_fifo_core.dequeue());
+                    out_req[port_selected].write(true);
                 }
+                else
+                {
+                    out_req[port_selected].write(false);
+                }
+
+                // check input handshake, if input handshake is alright and fifo not full, then put the data into fifo
+                if ((in_req[Core].read() == true && out_ack[Core].read() == true) && in_fifo_core.isFull() == false)
+                {
+                    in_fifo_core.enqueue(in_flit[Core].read());
+                }
+
+                // check if tail flit, if tail flit, then go back to idle and clear fifo status
+                // Also needs to clear the arbiter status
+                if (c_tail == 1)
+                {
+                    c_g_in_state = G_IDLE;
+                }
+                else
+                {
+                    c_g_in_state = G_ACTIVE;
+                }
+
+                // if the fifo request send the ack back to allow transfer
+                if(in_fifo_core.isFull() == true)
+                {
+                    out_ack[Core].write(false);
+                    cout << "Core FIFO IS FULL!" << endl;
+                }
+                else if (in_req[Core].read() == true)
+                {
+                    out_ack[Core].write(true);
+                }
+
                 break;
             }
+            default:
+            {
+                cout << "No port selected in core input fifo" << endl;
+                break;
+            }
+            }
+            // display the current simulation time in systemC
+            cout << "============" << sc_time_stamp() << "========================" << endl
+                 << endl;
+            cout << "current state of core fifo : " << c_g_in_state << endl;
+            in_fifo_core.display();
 
             wait();
         }
@@ -379,6 +274,7 @@ SC_MODULE(Router)
             switch (g_out_state_E)
             {
             case (O_IDLE):
+            {
                 // If west requesting east, this is set as the highest priority
                 if (w_req_e == 1)
                 {
@@ -388,6 +284,7 @@ SC_MODULE(Router)
                         e_grant_w = 1;
                         // set the id to route to the port
                         e_out_source = West;
+                        g_out_state_E = O_BUSY;
                     }
                 }
                 else if (n_req_e == 1)
@@ -396,6 +293,7 @@ SC_MODULE(Router)
                     {
                         e_grant_n = 1;
                         e_out_source = North;
+                        g_out_state_E = O_BUSY;
                     }
                 }
                 else if (s_req_e == 1)
@@ -404,6 +302,7 @@ SC_MODULE(Router)
                     {
                         e_grant_s = 1;
                         e_out_source = South;
+                        g_out_state_E = O_BUSY;
                     }
                 }
                 else if (c_req_e == 1)
@@ -412,15 +311,61 @@ SC_MODULE(Router)
                     {
                         e_grant_c = 1;
                         e_out_source = Core;
+                        g_out_state_E = O_BUSY;
                     }
                 }
                 break;
-            case (O_DONE):
-                e_grant_w = 0;
-                e_grant_n = 0;
-                e_grant_s = 0;
-                e_grant_c = 0;
-                break;
+            }
+            case (O_BUSY):
+            {
+                switch (e_out_source)
+                {
+                case (North):
+                {
+                    if (n_tail == 1)
+                    {
+                        e_grant_n = 0;
+                        g_out_state_E = O_IDLE;
+                    }
+                    break;
+                }
+                case (South):
+                {
+                    if (s_tail == 1)
+                    {
+                        e_grant_s = 0;
+                        g_out_state_E = O_IDLE;
+                    }
+                    break;
+                }
+                case (West):
+                {
+                    if (w_tail == 1)
+                    {
+                        e_grant_w = 0;
+                        g_out_state_E = O_IDLE;
+                    }
+                    break;
+                }
+                case (Core):
+                {
+                    if (c_tail == 1)
+                    {
+                        e_grant_c = 0;
+                        g_out_state_E = O_IDLE;
+                    }
+                    break;
+                }
+                default:
+                {
+                    cout << "Error in East arbiter" << endl;
+                    break;
+                }
+                }
+
+                // display e_out_source
+                cout << "current source of east arbiter : " << e_out_source << endl;
+            }
             }
 
             // West output resource
@@ -430,6 +375,8 @@ SC_MODULE(Router)
             // South output resource
 
             // Core output resource
+            // display arbiter states
+            cout << "current state of east arbiter : " << g_out_state_E << endl;
 
             wait();
         }
@@ -438,12 +385,6 @@ SC_MODULE(Router)
     SC_CTOR(Router)
     {
         SC_THREAD(core_in_fifo);
-        dont_initialize();
-        sensitive << clk.pos();
-        SC_THREAD(west_in_fifo);
-        dont_initialize();
-        sensitive << clk.pos();
-        SC_THREAD(east_out_buffer);
         dont_initialize();
         sensitive << clk.pos();
         SC_THREAD(arbiter);
