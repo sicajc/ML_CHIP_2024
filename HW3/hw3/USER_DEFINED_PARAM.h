@@ -19,12 +19,16 @@ static const int G_ROUTING = 1;
 static const int G_WAITING_OUTPUT = 2;
 static const int G_ACTIVE = 3;
 static const int G_WAITING_ACK = 4;
+static const int G_FULL = 5;
 
 // output buffer state
 static const int O_IDLE = 0;
 static const int O_WAITING_ACK = 1;
 static const int O_ACTIVE = 2;
 static const int O_DONE = 3;
+
+// FIFO SIZE
+static const int FIFO_SIZE = 5;
 
 
 #endif

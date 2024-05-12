@@ -4,7 +4,7 @@
 #include "systemc.h"
 #include "USER_DEFINED_PARAM.h"
 #include "helperfunction.h"
-#include "fifo.h"
+#include "Fifo.h"
 
 SC_MODULE(Router)
 {
@@ -34,11 +34,18 @@ SC_MODULE(Router)
     //=============================================================================
     // Declare fifo of size 5 for each direction, using primitive array
     // dont use interface or channel
-    fifo in_fifo_north;
-    fifo in_fifo_south;
-    fifo in_fifo_east;
-    fifo in_fifo_west;
-    fifo in_fifo_core;
+    // instantitate fifo with length 5
+    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_north;
+    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_south;
+    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_east;
+    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_west;
+    Fifo<flit_size_t,BUFFER_SIZE> in_fifo_core;
+
+    int in_fifo_north_ptr = 0;
+    int in_fifo_south_ptr = 0;
+    int in_fifo_east_ptr = 0;
+    int in_fifo_west_ptr = 0;
+    int in_fifo_core_ptr = 0;
 
     // in fifo states
     int w_g_in_state = 0;
@@ -97,7 +104,7 @@ SC_MODULE(Router)
             switch (c_g_in_state)
             {
             case (G_IDLE):
-                if (in_req[Core].read() == true && in_fifo_core.full == false)
+                if (in_req[Core].read() == true)
                 {
                     // send ack signal to the the core
                     out_ack[Core].write(true);
@@ -147,14 +154,14 @@ SC_MODULE(Router)
                     c_g_in_state = G_ROUTING;
 
                     // put this header into fifo
-                    in_fifo_core.flit_in(new_header);
+                    in_fifo_core.enqueue(new_header) ;
 
                     // print fifo
-                    in_fifo_core.print_fifo();
+
                 }
                 break;
             case (G_ROUTING):
-                if (in_fifo_core.full == false)
+                if (in_fifo_core.isFull() == false)
                 {
                     // 4 possible ports, for the selected port, route the flit to the port
                     // wait for request grant
@@ -187,43 +194,34 @@ SC_MODULE(Router)
                 }
                 break;
             case (G_ACTIVE):
-
-                if (in_fifo_core.full == true)
+                // Aim for examples
+                // 1. check fifo full ->
+                if(in_fifo_core.full == true)
                 {
-                    cout << "Fifo is full" << endl;
+                    // put the body flit into the fifo
+                    in_fifo_core.flit_in(in_flit[Core].read());
+                    c_g_in_state = G_WAITING_OUTPUT;
                     out_ack[Core].write(false);
-                }
-                else
+                } else
                 {
                     out_ack[Core].write(true);
                 }
-
-                // waiting for handshake to complete to the send resource to compelete
-                while (in_req[Core].read() == false)
-                {
-                    // wait for the handshake to complete
-                    cout << "Waiting for handshake to complete" << endl;
-                    wait();
-                }
-
-                cout << "out ack for core" << out_ack[Core].read() << endl;
-
-                // send flit into fifo, sending data in fifo needs 1 cycle
-                in_fifo_core.flit_in(in_flit[Core].read());
                 wait();
 
-                // take out values from fifo and allows other port to write fifo
-                if (g_out_state_E == O_ACTIVE)
-                {
-                    in_fifo_core.flit_out();
-                    out_ack[Core].write(true);
-                }
+                // 2. take data out from fifo if buffer has slot, output buffer
 
-                c_g_in_state = G_ACTIVE;
+                break;
+            case (G_WAITING_OUTPUT):
+                // look for example also
+                break;
+            case (G_WAITING_ACK):
+                break;
+            case (G_FULL):
                 break;
             }
+
             // cout << "current state of core fifo : " << c_g_in_state << endl;
-            in_fifo_core.print_fifo();
+            in_fifo_core.display();
             wait();
         }
     }

@@ -69,8 +69,6 @@ int sc_main(int argc, char *argv[])
     sc_trace_file *tf = sc_create_vcd_trace_file("wave");
     sc_trace(tf, clk, "clk");
     sc_trace(tf, rst, "rst");
-    // Name cannot have collision
-    sc_trace(tf,m_core.flit_counts,"flit_counts");
     sc_start(80, SC_NS);
 
     sc_close_vcd_trace_file(tf);
