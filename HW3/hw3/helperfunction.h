@@ -36,31 +36,31 @@ float sc_lv_to_float(sc_lv<32> val)
 // give me a function which takes x,y,dest_x,dest_y as input and returns the direction up the updated x,y also the
 // direction to traverse N,S,E,W,Eject
 
-// 0: North, 1: East, 2: South, 3: West, 4: Local
+// 0: NORTH, 1: EAST, 2: SOUTH, 3: WEST, 4: Local
 int get_direction(int x, int y)
 {
     if (x == 0 && y == 0)
     {
-        return Core;
+        return CORE;
     }
     else if (x < 0)
     {
-        return West;
+        return WEST;
     }
     else if (x > 0)
     {
-        return East;
+        return EAST;
     }
     else if (y < 0)
     {
-        return North;
+        return NORTH;
     }
     else if (y > 0)
     {
-        return South;
+        return SOUTH;
     }
 
-    return North;
+    return NORTH;
 }
 
 // new x,y, calculates the new x,y, displacement vector toward destination

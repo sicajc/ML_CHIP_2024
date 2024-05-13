@@ -4,7 +4,7 @@
 #include "systemc.h"
 #include "USER_DEFINED_PARAM.h"
 #include "helperfunction.h"
-#include "Fifo.h"
+#include <math>
 using namespace std;
 
 SC_MODULE(Router)
@@ -20,18 +20,99 @@ SC_MODULE(Router)
     // In channels going into the buffers, once the buffer size is full, lock the buffer
     // give large size buffers first for funcionality
     sc_in<flit_size_t> in_flit[5];
+
     // Only when handshaking completes, allowing the flit to be transfered.
     sc_in<bool> in_req[5];
     sc_out<bool> out_ack[5];
 
     int out_buf_busy[5];
 
+    flit_size_t out_buf[5];
+    flit_size_t in_buf[5];
+    int src_current_dir[5]; // Used to store the current direction of the input buf
+    int flit_sources[5];    // used to store the source of flit for each output ports
+
     int id;
     sc_trace_file *tf;
 
     void route_flits()
     {
+        for (;;)
+        {
+            // for every output ports
+            for (int output_port_dir = 0; output_port_dir < 5; output_port_dir++)
+            {
+                // search for every input port
+                if (out_buf_busy[output_port_dir] == true)
+                {
+                    out_req[output_port_dir].write(true);
 
+                    flit_size_t out_port_flit = out_buf[output_port_dir];
+                    int current_flit_source = flit_sources[output_port_dir];
+
+                    // buffer holds tail and handshaked
+                    if ((output_port_flit[32] == 1) && in_ack[output_port_dir] == true)
+                    {
+                        // sends data out from the buffer
+                        out_flit[output_port_dir].write(out_port_flit);
+                        out_buf_busy[output_port_dir] = false;
+                        out_req[output_port_dir].write(false);
+
+                        cout << "Router " << id << " sent flit " << out_port_flit << " to port " << output_port_dir << endl;
+                    }
+                    else if (in_ack[output_port_dir] == true) // handshaked
+                    {
+
+                        out_flit[output_port_dir].write(out_port_flit);
+                        out_buf[output_port_dir] = in_buf[current_flit_source];
+                        out_ack[current_flit_source].write(true);
+
+                        cout << "Router " << id << " sent flit " << out_port_flit << " to port " << output_port_dir << endl;
+                    }
+                    else
+                    {
+                        out_ack[current_flit_source].write(false);
+                    }
+                }
+                else
+                { // output port avilable
+
+                    for (int input_buf_dir = 0; input_buf_dir < 5; input_buf_dir++)
+                    {
+                        flit_size_t in_buf_flit = in_buf[input_buf_dir];
+                        // if in_buf_flit is head
+                        if (in_buf_flit[33] == 1)
+                        {
+                            // Extract information
+                            int dst_id = in_buf_flit.range(27, 24);
+
+                            int cur_x = this->id % 4;
+                            int cur_y = this->id / 4;
+
+                            int dst_x = dst_id % 4;
+                            int dst_y = dst_id / 4;
+
+                            int d_x = std::abs(cur_x - dst_x);
+                            int d_y = std::abs(cur_y - dst_y);
+
+                            if (cur_x == dst_x && cur_y == dst_y)
+                            {
+                                // destination reached
+                            }
+                            else if (d_x != 0) // check if stop moving in x direction
+                            {
+                            }
+                            else
+                            {
+
+                            }
+                        }
+                    }
+                }
+            }
+
+            wait();
+        }
     }
 
     //=============================================================================
@@ -46,8 +127,8 @@ SC_MODULE(Router)
         sensitive << clk.pos();
         dont_initialize();
 
-        sc_trace(tf, clk, "R_" + std::to_string(id) + ".clk");
-        sc_trace(tf, rst, "R_" + std::to_string(id) + ".rst");
+        sc_trace(tf, clk, "router_" + std::to_string(id) + ".clk");
+        sc_trace(tf, rst, "router_" + std::to_string(id) + ".rst");
 
         // In order to dump the signals in a hierarchical way, we need to trace the signals in the router
         // The signals cannot be dumped in array format, one must seperate them out to dump the signals
@@ -61,7 +142,7 @@ SC_MODULE(Router)
             sc_trace(tf, out_req[i], "R_" + to_string(id) + ".out_req_" + to_string(i));
             sc_trace(tf, out_ack[i], "R_" + to_string(id) + ".out_ack_" + to_string(i));
             // Inner signals
-            sc_trace(tf, out_buf_busy[i], "R_" + to_string(id) + ".out_busy_" + to_string(i));
+            sc_trace(tf, out_buf_busy[i], "Rr_" + to_string(id) + ".out_busy_" + to_string(i));
         }
     }
 };
