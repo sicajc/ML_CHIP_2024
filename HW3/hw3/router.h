@@ -4,7 +4,7 @@
 #include "systemc.h"
 #include "USER_DEFINED_PARAM.h"
 #include "helperfunction.h"
-#include <math>
+// #include <math>
 using namespace std;
 
 SC_MODULE(Router)
@@ -13,6 +13,7 @@ SC_MODULE(Router)
     sc_in<bool> clk;
 
     sc_out<flit_size_t> out_flit[5];
+
     // Hand shake signal for output channels
     sc_out<bool> out_req[5];
     sc_in<bool> in_ack[5];
@@ -25,7 +26,8 @@ SC_MODULE(Router)
     sc_in<bool> in_req[5];
     sc_out<bool> out_ack[5];
 
-    int out_buf_busy[5];
+    sc_signal<bool> out_buf_busy[5];
+    sc_signal<bool> in_buf_busy[5];
 
     flit_size_t out_buf[5];
     flit_size_t in_buf[5];
@@ -39,113 +41,174 @@ SC_MODULE(Router)
     {
         for (;;)
         {
-            // for every output ports
-            // search for every input port
-            for (int output_port_dir = 0; output_port_dir < 5; output_port_dir++)
+            // reset
+            if (rst.read() == true)
             {
-                // if output port is busy, something to transfer
-                if (out_buf_busy[output_port_dir] == true)
+                for (int i = 0; i < 5; i++)
                 {
-                    out_req[output_port_dir].write(true);
-
-                    flit_size_t out_port_flit = out_buf[output_port_dir];
-                    int current_flit_source = flit_sources[output_port_dir];
-
-                    // buffer holds tail and handshaked
-                    if ((output_port_flit[32] == 1) && in_ack[output_port_dir] == true)
-                    {
-                        // sends data out from the buffer
-                        out_flit[output_port_dir].write(out_port_flit);
-                        // release the output buffer
-                        out_buf_busy[output_port_dir] = false;
-                        out_req[output_port_dir].write(false);
-
-                        cout << "Router " << id << " sent flit " << out_port_flit << " to port " << output_port_dir << endl;
-                    }
-                    else if (in_ack[output_port_dir] == true && (out_ack[current_flit_source]==false)) // handshaked
-                    {
-                        // send the flit to the output port, note must delay out_ack by 1 cycle
-                        out_flit[output_port_dir].write(out_port_flit);
-                        out_buf[output_port_dir] = in_buf[current_flit_source];
-                        out_ack[current_flit_source].write(true);
-
-                        cout << "Router " << id << " sent flit " << out_port_flit << " to port " << output_port_dir << endl;
-                    }
-                    else
-                    {
-                        out_ack[current_flit_source].write(false);
-                    }
+                    out_buf_busy[i] = false;
+                    out_buf[i] = 0;
+                    in_buf[i] = 0;
+                    src_current_dir[i] = 0;
+                    flit_sources[i] = 0;
+                    in_buf_busy[i] = false;
                 }
-                else
+            }
+            else
+            {
+                // for every output ports
+                // search for every input port
+                for (int output_port_dir = 0; output_port_dir < 5; output_port_dir++)
                 {
-                    // output port avilable
-                    out_req[output_port_dir].write(false);
-
-                    for (int input_buf_dir = 0; input_buf_dir < 5; input_buf_dir++)
+                    // if output port is busy, something to transfer
+                    if (out_buf_busy[output_port_dir] == true)
                     {
-                        flit_size_t in_buf_flit = in_buf[input_buf_dir];
-                        // if in_buf_flit is head
-                        if (in_buf_flit[33] == 1)
+                        out_req[output_port_dir].write(true);
+
+                        flit_size_t output_port_flit = out_buf[output_port_dir];
+                        int current_flit_source = flit_sources[output_port_dir];
+
+                        // display flit sources for current router and its corresponding output port
+                        //  router id info
+                        //  cout << "==================Router id: " << id << endl;
+                        //  cout << "Flit sources for current router: " << current_flit_source << " Output port: " << output_port_dir << endl;
+
+                        // buffer holds tail and handshaked with output buffer
+                        if ((output_port_flit[32] == 1) && in_ack[output_port_dir] == true)
                         {
-                            // Extract information
-                            int dst_id = in_buf_flit.range(27, 24);
+                            // sends data out from the buffer
+                            out_flit[output_port_dir].write(output_port_flit);
+                            // release the output buffer
+                            out_buf_busy[output_port_dir] = false;
+                            out_req[output_port_dir].write(false);
 
-                            int cur_x = this->id % 4;
-                            int cur_y = this->id / 4;
+                            // cout << "Router " << id << " sent flit " << output_port_flit << " to port " << output_port_dir << endl;
+                        }
+                        else if (in_ack[output_port_dir] == true)
+                        {
+                            // send the flit to the output port, note must delay out_ack by 1 cycle
+                            out_flit[output_port_dir].write(output_port_flit);
+                            out_buf[output_port_dir] = in_buf[current_flit_source];
 
-                            int dst_x = dst_id % 4;
-                            int dst_y = dst_id / 4;
-
-                            int d_x = std::abs(cur_x - dst_x);
-                            int d_y = std::abs(cur_y - dst_y);
-
-                            int cur_dir;
-
-                            // finding the direction
-                            if (cur_x == dst_x && cur_y == dst_y)
+                            if (out_ack[current_flit_source].read() == true)
                             {
-                                // destination reached
-                                cur_dir = CORE;
-                            }
-                            else if (d_x != 0) // check if reached
-                            {
-                                // determine going east or west
-                                int cost_east = (4 + cur_x + 1) % 4 - dst_x;
-                                int cost_west = (4 + cur_x - 1) % 4 - dst_x;
-
-                                if (cost_east <= cost_west)
-                                {
-                                    cur_dir = EAST;
-                                }
-                                else
-                                {
-                                    cur_dir = WEST;
-                                }
+                                out_ack[current_flit_source].write(false);
                             }
                             else
                             {
-                                // destermine going north or south
-                                int cost_north = (4 + cur_y + 1) % 4 - dst_y;
-                                int cost_south = (4 + cur_y - 1) % 4 - dst_y;
+                                out_ack[current_flit_source].write(true);
+                            }
+                            //
+                            cout << "Router " << id << " sent flit " << output_port_flit << " to port " << output_port_dir << endl;
+                            // print current flit source and output dir
+                            // cout << "Current flit source: " << current_flit_source << " Output port dir: " << output_port_dir << endl;
+                        }
+                        else
+                        {
+                            // print time
+                            cout << "================Time:  " << sc_time_stamp() << "==================" << endl;
+                            // print router id and port
+                            cout << "Router id: " << id << " Output port: " << output_port_dir << endl;
 
-                                if (cost_north <= cost_south)
+                            out_ack[current_flit_source].write(false);
+                        }
+                    }
+                    else
+                    {
+                        // output port unavilable
+                        out_req[output_port_dir].write(false);
+
+                        for (int input_buf_dir = 0; input_buf_dir < 5; input_buf_dir++)
+                        {
+                            // check if there is packet to read
+                            if (in_req[input_buf_dir] == true)
+                            {
+                                in_buf[input_buf_dir] = in_flit[input_buf_dir].read();
+
+                                if (in_buf_busy[input_buf_dir] == false)
                                 {
-                                    cur_dir = NORTH;
+                                    // the in buf is idle, allows one transmission, header is not yet read
+                                    // and mark the buffer as busy
+                                    in_buf_busy[input_buf_dir] = true;
+                                    out_ack[input_buf_dir].write(true);
                                 }
                                 else
                                 {
-                                    cur_dir = SOUTH;
+                                    out_ack[input_buf_dir].write(false);
                                 }
-                            }
 
-                            // see if the selected port header matches the port direction
-                            if (cur_dir == output_port_dir)
-                            {
-                                out_buf_busy[output_port_dir] = true;
-                                flit_sources[output_port_dir] = input_buf_dir;
-                                src_current_dir[input_buf_dir] = cur_dir;
-                                cout << "Router " << id << " sent flit " << out_buf[output_port_dir] << " to port " << output_port_dir << endl;
-                                break;
+                                flit_size_t in_buf_flit = in_buf[input_buf_dir];
+                                // if in_buf_flit is head
+                                if (in_buf_flit[33] == 1)
+                                {
+                                    // Extract information
+                                    int dst_id = in_buf_flit.range(27, 24).to_uint();
+
+                                    int cur_x = this->id % 4;
+                                    int cur_y = this->id / 4;
+
+                                    int dst_x = dst_id % 4;
+                                    int dst_y = dst_id / 4;
+
+                                    int d_x = std::abs(cur_x - dst_x);
+                                    int d_y = std::abs(cur_y - dst_y);
+
+                                    int cur_dir;
+
+                                    // finding the direction
+                                    if (cur_x == dst_x && cur_y == dst_y)
+                                    {
+                                        // destination reached
+                                        cur_dir = CORE;
+                                    }
+                                    else if (d_x != 0) // check if reached
+                                    {
+                                        // determine going east or west
+                                        int cost_east = (4 + cur_x + 1) % 4 - dst_x;
+                                        int cost_west = (4 + cur_x - 1) % 4 - dst_x;
+
+                                        if (cost_east <= cost_west)
+                                        {
+                                            cur_dir = EAST;
+                                        }
+                                        else
+                                        {
+                                            cur_dir = WEST;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // destermine going north or south
+                                        int cost_north = (4 + cur_y + 1) % 4 - dst_y;
+                                        int cost_south = (4 + cur_y - 1) % 4 - dst_y;
+
+                                        if (cost_north <= cost_south)
+                                        {
+                                            cur_dir = NORTH;
+                                        }
+                                        else
+                                        {
+                                            cur_dir = SOUTH;
+                                        }
+                                    }
+
+                                    // see if the selected port header matches the port direction
+                                    if (cur_dir == output_port_dir)
+                                    {
+                                        out_buf_busy[output_port_dir] = true;
+                                        flit_sources[output_port_dir] = input_buf_dir;
+
+                                        // print time
+                                        // cout << "================Time:  " << sc_time_stamp() <<"=================="<< endl;
+
+                                        src_current_dir[input_buf_dir] = cur_dir;
+                                        // send the head flit
+                                        out_buf[output_port_dir] = in_buf_flit;
+
+                                        // cout << "Router " << id << " sent flit " << out_buf[output_port_dir] << " to port " << output_port_dir << endl;
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }
@@ -183,7 +246,7 @@ SC_MODULE(Router)
             sc_trace(tf, out_req[i], "R_" + to_string(id) + ".out_req_" + to_string(i));
             sc_trace(tf, out_ack[i], "R_" + to_string(id) + ".out_ack_" + to_string(i));
             // Inner signals
-            sc_trace(tf, out_buf_busy[i], "Rr_" + to_string(id) + ".out_busy_" + to_string(i));
+            sc_trace(tf, out_buf_busy[i], "R_" + to_string(id) + ".out_busy_" + to_string(i));
         }
     }
 };
