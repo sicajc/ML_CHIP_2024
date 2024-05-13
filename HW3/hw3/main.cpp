@@ -13,23 +13,35 @@ int sc_main(int argc, char *argv[])
     sc_signal<bool> clk;
     sc_signal<bool> rst;
 
-    sc_signal<flit_size_t> router_i_flit_fifo[5];
-    sc_signal<bool> router_i_req[5];
-    sc_signal<bool> router_o_ack[5];
+    sc_signal<sc_lv<34>> c_r_flit[4][4][2];
+    sc_signal<bool> c_r_req[4][4][2];
+    sc_signal<bool> c_r_ack[4][4][2];
 
-    sc_signal<flit_size_t> router_o_flit_fifo[5];
-    sc_signal<bool> router_o_req[5];
-    sc_signal<bool> router_i_ack[5];
+    // Trace file declration for waveform dump
+    sc_trace_file *tf = sc_create_vcd_trace_file("wave");
+    sc_trace(tf, clk, "clk");
+    sc_trace(tf, rst, "rst");
 
     // =======================
     //   modules declaration
     // =======================
     Clock m_clock("m_clock", 10);
     Reset m_reset("m_reset", 15);
-    CORE m_core("m_core");
 
-    // router
-    Router m_router("m_router");
+    // instantiate 16 cores and 16 routers as 4x4 array
+    Core *m_core[4][4];
+    Router *m_router[4][4];
+
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            int id = i * 4 + j;
+            // Router(sc_module_name name, int id, sc_trace_file *tf = nullptr) : sc_module(name), id(id)
+            m_core[i][j] = new Core("m_core_" + to_string(id), id, tf);
+            m_router[i][j] = new Router("m_router_" + to_string(id), id, tf);
+        }
+    }
 
     // =======================
     //   modules connection
@@ -40,35 +52,31 @@ int sc_main(int argc, char *argv[])
     // All port must be bounded
     m_core.clk(clk);
     m_core.rst(rst);
-    m_core.flit_rx(router_o_flit_fifo[Core]);
-    m_core.req_rx(router_o_req[Core]);
-    m_core.ack_tx(router_o_ack[Core]);
 
-    m_core.flit_tx(router_i_flit_fifo[Core]);
-    m_core.req_tx(router_i_req[Core]);
-    m_core.ack_rx(router_i_ack[Core]);
-
-    // connect router with core
-    m_router.clk(clk);
-    m_router.rst(rst);
-
-    // connect router with core
-    for (int i = 0; i < 5; i++)
+    // connect all routers with cores
+    for (int i = 0; i < 4; i++)
     {
-        m_router.out_flit[i](router_o_flit_fifo[i]);
-        m_router.out_req[i](router_o_req[i]);
-        m_router.out_ack[i](router_o_ack[i]);
+        for (int j = 0; j < 4; j++)
+        {
+            m_core[i][j]->flit_tx(c_r_flit[i][j][0]);
+            m_core[i][j]->req_tx(c_r_req[i][j][0]);
+            m_core[i][j]->ack_tx(c_r_ack[i][j][0]);
 
-        m_router.in_flit[i](router_i_flit_fifo[i]);
-        m_router.in_req[i](router_i_req[i]);
-        m_router.in_ack[i](router_i_ack[i]);
+            m_core[i][j]->flit_rx(c_r_flit[i][j][1]);
+            m_core[i][j]->req_rx(c_r_req[i][j][1]);
+            m_core[i][j]->ack_rx(c_r_ack[i][j][1]);
+
+            m_router[i][j]->out_flit[Core](c_r_flit[i][j][0]);
+            m_router[i][j]->out_req[Core](c_r_req[i][j][0]);
+            m_router[i][j]->in_ack[Core](c_r_ack[i][j][0]);
+
+            m_router[i][j]->in_flit[Core](c_r_flit[i][j][1]);
+            m_router[i][j]->in_req[Core](c_r_req[i][j][1]);
+            m_router[i][j]->out_ack[Core](c_r_ack[i][j][1]);
+        }
     }
 
     // set simulation end time
-    // tracing
-    sc_trace_file *tf = sc_create_vcd_trace_file("wave");
-    sc_trace(tf, clk, "clk");
-    sc_trace(tf, rst, "rst");
     sc_start(100, SC_NS);
 
     sc_close_vcd_trace_file(tf);
