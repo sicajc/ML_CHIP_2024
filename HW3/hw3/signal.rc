@@ -261,7 +261,7 @@ addSignal -h 15 /SystemC/core_15/ack_tx
 endSubGroup "TX"
 
 addGroup "Router_0"
-addSignal -h 15 /SystemC/router_0/clk
+addSignal -h 15 /SystemC/R_0/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -314,7 +314,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_1"
-addSignal -h 15 /SystemC/router_1/clk
+addSignal -h 15 /SystemC/R_1/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -367,7 +367,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_2"
-addSignal -h 15 /SystemC/router_2/clk
+addSignal -h 15 /SystemC/R_2/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -420,7 +420,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_3"
-addSignal -h 15 /SystemC/router_3/clk
+addSignal -h 15 /SystemC/R_3/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -473,7 +473,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_4"
-addSignal -h 15 /SystemC/router_4/clk
+addSignal -h 15 /SystemC/R_4/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -526,7 +526,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_5"
-addSignal -h 15 /SystemC/router_5/clk
+addSignal -h 15 /SystemC/R_5/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -579,7 +579,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_6"
-addSignal -h 15 /SystemC/router_6/clk
+addSignal -h 15 /SystemC/R_6/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -632,7 +632,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_7"
-addSignal -h 15 /SystemC/router_7/clk
+addSignal -h 15 /SystemC/R_7/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -685,7 +685,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_8"
-addSignal -h 15 /SystemC/router_8/clk
+addSignal -h 15 /SystemC/R_8/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -738,7 +738,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_9"
-addSignal -h 15 /SystemC/router_9/clk
+addSignal -h 15 /SystemC/R_9/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -791,7 +791,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_10"
-addSignal -h 15 /SystemC/router_10/clk
+addSignal -h 15 /SystemC/R_10/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -844,7 +844,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_11"
-addSignal -h 15 /SystemC/router_11/clk
+addSignal -h 15 /SystemC/R_11/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -897,7 +897,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_12"
-addSignal -h 15 /SystemC/router_12/clk
+addSignal -h 15 /SystemC/R_12/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -950,7 +950,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_13"
-addSignal -h 15 /SystemC/router_13/clk
+addSignal -h 15 /SystemC/R_13/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -1003,7 +1003,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_14"
-addSignal -h 15 /SystemC/router_14/clk
+addSignal -h 15 /SystemC/R_14/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
@@ -1056,7 +1056,7 @@ addSignal -h 15 -holdScope out_ack_4
 endSubGroup "4_N_RX"
 
 addGroup "Router_15"
-addSignal -h 15 /SystemC/router_15/clk
+addSignal -h 15 /SystemC/R_15/clk
 addSubGroup "0_C_TX" -e FALSE
 addSignal -h 15 -holdScope out_flit_0[33:0]
 addSignal -h 15 -holdScope out_req_0
