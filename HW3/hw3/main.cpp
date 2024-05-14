@@ -4,7 +4,7 @@
 #include "core.h"
 #include "pe.h"
 #include "router.h"
-#define SIM_TIME 1000
+#define SIM_TIME 250
 
 int sc_main(int argc, char *argv[])
 {

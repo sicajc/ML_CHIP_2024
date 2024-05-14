@@ -87,25 +87,26 @@ SC_MODULE(Core)
                 // cout << "Core_" << id << " send packet, num_of_flits:" << num_of_flits << endl;
                 // more data to send, send req to the router
                 req_tx.write(true);
-                if (ack_tx.read() == true)
+                if (flit_counts == 0) // header
+                {
+                    // cout << "Core_" << id << " send header" << endl;
+                    // send the header
+                    flit_size_t header = 0;
+                    header.range(33, 32) = 0b10;
+                    // src_id is 4 bits
+                    header.range(31, 28) = src_id;
+                    // dest_id is 4 bits
+                    header.range(27, 24) = dest_id;
+                    // rest 0
+                    header.range(23, 0) = 0;
+                    flit_tx.write(header);
+                    flit_counts++;
+                }
+                else if (ack_tx.read() == true)
                 {
                     // cout << "Core_" << id << " send data" << endl;
 
-                    if (flit_counts == 0) // header
-                    {
-                        // cout << "Core_" << id << " send header" << endl;
-                        // send the header
-                        flit_size_t header = 0;
-                        header.range(33, 32) = 0b10;
-                        // src_id is 4 bits
-                        header.range(31, 28) = src_id;
-                        // dest_id is 4 bits
-                        header.range(27, 24) = dest_id;
-                        // rest 0
-                        header.range(23, 0) = 0;
-                        flit_tx.write(header);
-                    }
-                    else if (flit_counts == num_of_flits - 1)
+                    if (flit_counts == num_of_flits - 1)
                     {
                         // send the tail, dequeue the data
                         float temp;
@@ -153,61 +154,89 @@ SC_MODULE(Core)
     {
         for (;;)
         {
+            flit_size_t flit = flit_rx.read();
+            // ack receive
             if (rst.read() == true)
             {
-                // reset all output ports
+                ack_rx.write(false);
+            }
+            else if (ack_rx.read() == true)
+            {
                 ack_rx.write(false);
             }
             else if (req_rx.read() == true)
             {
-                // cout << "Core_" << id << " receive packet" << endl;
-                // receive the packet
-                flit_size_t flit = flit_rx.read();
-                // header
-                pkt_rx = new Packet;
-                if (pkt_rx != nullptr)
+                // send ack to the router, oscilates the ack_rx
+                if (flit.range(33, 32) == 0b10) // header
                 {
-                    // cout << "Core_" << id << " receive flit:" << flit << endl;
-                    if (flit.range(33, 32) == 0b10) // header
-                    {
-                        pkt_rx->source_id = flit.range(31, 28).to_uint();
-                        pkt_rx->dest_id = flit.range(27, 24).to_uint();
-                        // cout << "Core_" << id << " receive header, src_id:" << pkt_rx->source_id << ", dest_id:" << pkt_rx->dest_id << endl;
-                    }
-                    else if (flit.range(33, 32) == 0b01)
-                    {
-                        // tail
-                        float temp = sc_lv_to_float(flit.range(31, 0));
-                        pkt_rx->datas.push_back(temp);
-                        // cout << "Core_" << id << " receive tail, data:" << temp << endl;
-                        // check the packet
-                        pe.check_packet(pkt_rx);
-                        pkt_rx = nullptr;
-                    }
-                    else
-                    {
-                        // body
-                        float temp = sc_lv_to_float(flit.range(31, 0));
-                        pkt_rx->datas.push_back(temp);
-                        // cout << "Core_" << id << " receive body, data:" << temp << endl;
-                    }
-
-                    // send ack to the router, oscilates the ack_rx
-                    if (ack_rx.read() == false)
-                    {
-                        ack_rx.write(true);
-                    }
-                    else
-                    {
-                        ack_rx.write(false);
-                    }
+                    ack_rx.write(true);
+                }
+                else if (flit.range(33, 32) == 0b01) // tail received
+                {
+                    ack_rx.write(false);
+                }
+                else
+                {
+                    ack_rx.write(true);
                 }
             }
             else
             {
-                // no more data to receive
                 ack_rx.write(false);
             }
+
+            if (req_rx.read() == true && ack_rx.read() == true)
+            {
+                // cout << "Core_" << id << " receive packet" << endl;
+                // receive the packet
+
+                // display flit read in
+                cout << "Core_" << id << " receive flit:" << flit << endl;
+                // header
+
+                // send ack to the router, oscilates the ack_rx
+                if (flit.range(33, 32) == 0b10) // header
+                {
+                    pkt_rx = new Packet;
+
+                    if (pkt_rx == nullptr)
+                        cout << "Core_" << id << " ERROR: header received while receiving packet" << endl;
+                    else
+                    {
+                        pkt_rx->source_id = flit.range(31, 28).to_uint();
+                        pkt_rx->dest_id = flit.range(27, 24).to_uint();
+                        cout << "Core_" << id << " receive header, src_id:" << pkt_rx->source_id << ", dest_id:" << pkt_rx->dest_id << endl;
+                    }
+                }
+                else if (flit.range(33, 32) == 0b01) // tail received
+                {
+                    // tail
+                    float temp = sc_lv_to_float(flit.range(31, 0));
+                    if (pkt_rx != nullptr)
+                        pkt_rx->datas.push_back(temp);
+                    // cout << "Core_" << id << " receive tail, data:" << temp << endl;
+
+                    // display the whole pckt_rx->datas
+                    cout <<"pkt_rx->source_id:" << pkt_rx->source_id << ", pkt_rx->dest_id:" << pkt_rx->dest_id << endl;
+
+                    for (int i = 0; i < pkt_rx->datas.size(); i++)
+                    {
+                        cout << "Core_" << id << " receive data:" << pkt_rx->datas[i] << endl;
+                    }
+
+                    // check the packet
+                    pe.check_packet(pkt_rx);
+                }
+                else
+                {
+                    // body
+                    float temp = sc_lv_to_float(flit.range(31, 0));
+                    if (pkt_rx != nullptr)
+                        pkt_rx->datas.push_back(temp);
+                    cout << "Core_" << id << " receive body, data:" << temp << endl;
+                }
+            }
+
 
             wait();
         }

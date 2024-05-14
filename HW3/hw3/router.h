@@ -67,6 +67,7 @@ SC_MODULE(Router)
 
                         flit_size_t output_port_flit = out_buf[output_port_dir];
                         int current_flit_source = flit_sources[output_port_dir];
+                        out_flit[output_port_dir].write(out_buf[output_port_dir]);
 
                         // display flit sources for current router and its corresponding output port
                         //  router id info
@@ -74,31 +75,29 @@ SC_MODULE(Router)
                         //  cout << "Flit sources for current router: " << current_flit_source << " Output port: " << output_port_dir << endl;
 
                         // buffer holds tail and handshaked with output buffer
-                        if ((output_port_flit[32] == 1) && in_ack[output_port_dir] == true)
+                        if (out_ack[current_flit_source].read() == true)
+                        {
+                            out_ack[current_flit_source].write(false);
+                        }
+                        else if ((output_port_flit[32] == 1) && in_ack[output_port_dir] == true)
                         {
                             // sends data out from the buffer
-                            out_flit[output_port_dir].write(output_port_flit);
                             // release the output buffer
                             out_buf_busy[output_port_dir] = false;
                             out_req[output_port_dir].write(false);
 
+                            // cout << "Tail flits sending?" << endl;
                             // cout << "Router " << id << " sent flit " << output_port_flit << " to port " << output_port_dir << endl;
                         }
                         else if (in_ack[output_port_dir] == true)
                         {
-                            // send the flit to the output port, note must delay out_ack by 1 cycle
-                            out_flit[output_port_dir].write(output_port_flit);
-                            out_buf[output_port_dir] = in_buf[current_flit_source];
+                            // other port write over the port?
 
-                            if (out_ack[current_flit_source].read() == true)
-                            {
-                                out_ack[current_flit_source].write(false);
-                            }
-                            else
-                            {
-                                out_ack[current_flit_source].write(true);
-                            }
-                            //
+                            // send the flit to the output port, note must delay out_ack by 1 cycle
+                            out_buf[output_port_dir] = in_flit[current_flit_source].read();
+
+                            out_ack[current_flit_source].write(true);
+
                             cout << "Router " << id << " sent flit " << output_port_flit << " to port " << output_port_dir << endl;
                             // print current flit source and output dir
                             // cout << "Current flit source: " << current_flit_source << " Output port dir: " << output_port_dir << endl;
@@ -106,38 +105,24 @@ SC_MODULE(Router)
                         else
                         {
                             // print time
-                            cout << "================Time:  " << sc_time_stamp() << "==================" << endl;
+                            cout << "================Time:  " << sc_time_stamp() << "==================\n\n"
+                                 << endl;
                             // print router id and port
-                            cout << "Router id: " << id << " Output port: " << output_port_dir << endl;
+                            cout << "Router id: " << id << " Input port: " << current_flit_source << " Waiting Output port: \n"
+                                 << output_port_dir << endl;
 
                             out_ack[current_flit_source].write(false);
                         }
                     }
                     else
                     {
-                        // output port unavilable
-                        out_req[output_port_dir].write(false);
-
                         for (int input_buf_dir = 0; input_buf_dir < 5; input_buf_dir++)
                         {
                             // check if there is packet to read
                             if (in_req[input_buf_dir] == true)
                             {
-                                in_buf[input_buf_dir] = in_flit[input_buf_dir].read();
 
-                                if (in_buf_busy[input_buf_dir] == false)
-                                {
-                                    // the in buf is idle, allows one transmission, header is not yet read
-                                    // and mark the buffer as busy
-                                    in_buf_busy[input_buf_dir] = true;
-                                    out_ack[input_buf_dir].write(true);
-                                }
-                                else
-                                {
-                                    out_ack[input_buf_dir].write(false);
-                                }
-
-                                flit_size_t in_buf_flit = in_buf[input_buf_dir];
+                                flit_size_t in_buf_flit = in_flit[input_buf_dir].read();
                                 // if in_buf_flit is head
                                 if (in_buf_flit[33] == 1)
                                 {
@@ -193,8 +178,9 @@ SC_MODULE(Router)
                                     }
 
                                     // see if the selected port header matches the port direction
-                                    if (cur_dir == output_port_dir)
+                                    if (cur_dir == output_port_dir && out_buf_busy[output_port_dir] == false)
                                     {
+                                        // this shall be happened in the next cycle!
                                         out_buf_busy[output_port_dir] = true;
                                         flit_sources[output_port_dir] = input_buf_dir;
 
@@ -203,7 +189,11 @@ SC_MODULE(Router)
 
                                         src_current_dir[input_buf_dir] = cur_dir;
                                         // send the head flit
-                                        out_buf[output_port_dir] = in_buf_flit;
+                                        out_buf[output_port_dir] = in_flit[input_buf_dir].read();
+
+                                        out_req[output_port_dir].write(true);
+                                        // Allows for next flit to be sent
+                                        out_ack[input_buf_dir].write(true);
 
                                         // cout << "Router " << id << " sent flit " << out_buf[output_port_dir] << " to port " << output_port_dir << endl;
                                         break;
@@ -247,6 +237,7 @@ SC_MODULE(Router)
             sc_trace(tf, out_ack[i], "R_" + to_string(id) + ".out_ack_" + to_string(i));
             // Inner signals
             sc_trace(tf, out_buf_busy[i], "R_" + to_string(id) + ".out_busy_" + to_string(i));
+            sc_trace(tf, in_buf_busy[i], "R_" + to_string(id) + ".in_buf_busy_" + to_string(i));
         }
     }
 };

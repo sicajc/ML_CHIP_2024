@@ -2,7 +2,7 @@ Magic 271485
 Revision Verdi_P-2019.06
 
 ; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
-viewPort 0 887 1280 729 303 108
+viewPort 0 23 1536 793 296 108
 
 ; File list:
 ; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
@@ -17,15 +17,23 @@ signalSpacing 5
 ; windowTimeUnit is used for zoom, cursor & marker
 ; waveform viewport range
 zoom 0.000000 202000.000000
-cursor 60000.000000
+cursor 190000.000000
 marker 0.000000
 
 ; user define markers
 ; userMarker time_pos marker_name color linestyle
 ; visible top row signal index
-top 17
+top 1
 ; marker line index
-markerPos 24
+markerPos 20
+
+; Run Time Signal and Member
+; userBusMem member ...
+; saveRunSig name
+activeDirFile "" "/RAID2/COURSE/mlchip/mlchip126/hw3/wave.vcd.fsdb"
+userBusMem /SystemC/core_1/flit_rx[33]
+userBusMem /SystemC/core_1/flit_rx[32]
+saveRunSig "Type[33:32]"
 
 ; event list
 ; addEvent event_name event_expression
@@ -65,9 +73,11 @@ addSignal -h 21 -holdScope req_tx
 addSignal -h 21 -holdScope ack_tx
 endSubGroup "Tx"
 addSubGroup "RX"
+addSignal -h 21 /SystemC/clk
 addSignal -h 21 /SystemC/core_1/ack_rx
 addSignal -h 21 -holdScope req_rx
 addSignal -h 21 -UNSIGNED -HEX -holdScope flit_rx[33:0]
+addSignal -h 21 /Type[33:32]
 endSubGroup "RX"
 addGroup "Router0"
 addSignal -h 21 /SystemC/clk
@@ -106,7 +116,7 @@ addSignal -h 21 -holdScope out_req_0
 addSignal -h 21 -holdScope out_req_2
 addSignal -h 21 -holdScope out_req_3
 addSignal -h 21 -holdScope out_req_4
-addGroup "Router1" -e FALSE
+addGroup "Router1"
 addSignal -h 21 /SystemC/R_1/in_ack_0
 addSignal -h 21 -holdScope in_ack_1
 addSignal -h 21 -holdScope in_ack_2
@@ -118,7 +128,8 @@ addSignal -h 21 -holdScope in_ack_4
 addSignal -h 21 -UNSIGNED -HEX -holdScope in_flit_0[33:0]
 addSignal -h 21 -UNSIGNED -HEX -holdScope in_flit_1[33:0]
 addSignal -h 21 -UNSIGNED -HEX -holdScope in_flit_2[33:0]
-addSignal -h 21 -UNSIGNED -HEX -holdScope in_flit_3[33:0]
+addSignal -h 21 /SystemC/clk
+addSignal -h 21 -UNSIGNED -HEX /SystemC/R_1/in_flit_3[33:0]
 addSignal -h 21 -UNSIGNED -HEX -holdScope in_flit_4[33:0]
 addSignal -h 21 -holdScope in_req_1
 addSignal -h 21 -holdScope in_req_2
