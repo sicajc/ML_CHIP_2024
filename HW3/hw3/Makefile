@@ -14,7 +14,7 @@ all:
 	g++ -I . -I  $(INC_DIR) -L . -L $(LIB_DIR) -o $(O) $(C) $(LIB) $(RPATH)
 	./run
 
-nWave_run:
+nWave_ON:
 	nWave -ssf *.vcd
 
 clean:

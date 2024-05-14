@@ -10,10 +10,9 @@
 #include "systemc.h"
 using namespace std;
 
-#define DEBUG_MODE true     // You can change this value to get more information
+#define DEBUG_MODE false     // You can change this value to get more information
 #define TOTAL_PACKET_NUM 1   // Please don't change this value
 
-// Has to decompose the packets into Head,bodies and tail flits each being 34 bits only
 struct Packet {
     int source_id;
     int dest_id;
@@ -23,10 +22,10 @@ struct Packet {
 class PE {
 public:
     PE();
-    Packet* get_packet();           // Receive packet from the core
-    void check_packet(Packet* p);   // Check the grouped packet received
-    void init(int pe_id);           // Must be called before simulation
-
+    Packet* get_packet();
+    void check_packet(Packet* p);
+    void init(int pe_id);
+    
 private:
     int id;
     int send_count;
@@ -34,4 +33,5 @@ private:
     vector<Packet> send_packets;
     vector<Packet> recv_packets;
 };
+
 #endif
