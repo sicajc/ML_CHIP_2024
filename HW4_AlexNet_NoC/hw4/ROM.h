@@ -29,7 +29,7 @@ SC_MODULE(ROM)
     ROM(sc_module_name name, sc_trace_file *tf = nullptr) : sc_module(name)
     {
         // Constructor
-        DATA_PATH = "../data/";      // Please change this to your own data path
+        DATA_PATH = "./data/";      // Please change this to your own data path
         IMAGE_FILE_NAME = "cat.txt"; // You can change this to test another image file
 
         SC_THREAD(run);

@@ -46,7 +46,6 @@ SC_MODULE(Core)
 
         int done_sending_flag;
 
-
         for (;;)
         {
             if (rst.read() == true)
