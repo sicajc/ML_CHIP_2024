@@ -5,6 +5,32 @@
 #include <cstring>
 #include "USER_DEFINED_PARAM.h"
 
+//Input a 1d double img
+double* assymetrical_padding(double* img)
+{
+    // convert tensor3dImgi to 3dtensor type
+    Tensor3d tensor3dImg_i1 = convert1dTo3d(img, INPUT_IMG_CHANNEL, INPUT_IMG_WIDTH, INPUT_IMG_HEIGHT);
+    // cout << "Conversion to 3d tensor" << endl;
+
+    Tensor3d cat_img_padded(INPUT_IMG_CHANNEL, std::vector<std::vector<double>>(INPUT_IMG_WIDTH + 3, std::vector<double>(INPUT_IMG_HEIGHT + 3)));
+
+    for (int c = 0; c < INPUT_IMG_CHANNEL; ++c)
+    {
+        for (int w = 0; w < INPUT_IMG_WIDTH; ++w)
+        {
+            for (int h = 0; h < INPUT_IMG_HEIGHT; ++h)
+            {
+                cat_img_padded[c][w + 2][h + 2] = tensor3dImg_i1[c][w][h];
+            }
+        }
+    }
+
+    // convert 3d tensor to 1d tensor
+    double *img = convert3dTo1d(cat_img_padded, INPUT_IMG_CHANNEL, INPUT_IMG_WIDTH + 3, INPUT_IMG_HEIGHT + 3);
+
+    return img;
+}
+
 void print_sc_lv_as_float(sc_lv<32> val)
 {
     uint32_t int_val = val.to_uint();
@@ -64,7 +90,7 @@ int get_direction(int x, int y)
 }
 
 // new x,y, calculates the new x,y, displacement vector toward destination
-void get_new_xy(int x, int y,int &new_x, int &new_y)
+void get_new_xy(int x, int y, int &new_x, int &new_y)
 {
     if (x == 0 && y == 0)
     {
@@ -92,6 +118,5 @@ void get_new_xy(int x, int y,int &new_x, int &new_y)
         new_y = y - 1;
     }
 }
-
 
 #endif // HELPERFUNCTION_H

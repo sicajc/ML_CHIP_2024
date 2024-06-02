@@ -222,14 +222,6 @@ SC_MODULE(Core)
                         pkt_rx->datas.push_back(temp);
                     cout << "Core_" << id << " receive tail, data:" << temp << endl;
 
-                    // display the whole pckt_rx->datas
-                    //cout << "pkt_rx->source_id:" << pkt_rx->source_id << ", pkt_rx->dest_id:" << pkt_rx->dest_id << endl;
-
-                    // for (int i = 0; i < pkt_rx->datas.size(); i++)
-                    // {
-                    //     cout << "Core_" << id << " receive data:" << pkt_rx->datas[i] << endl;
-                    // }
-
                     // check the packet
                     pe.check_packet(pkt_rx);
                 }

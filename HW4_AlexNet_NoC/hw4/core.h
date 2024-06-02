@@ -26,6 +26,7 @@ SC_MODULE(Core)
     // PE pe;
 
     int id;
+    bool tail_received_f = false;
 
     Packet *pkt_tx, *pkt_rx;
 
@@ -33,6 +34,9 @@ SC_MODULE(Core)
     sc_trace_file *tf;
 
     // global variable
+    std::deque<sc_lv<32>> weights_q;
+    std::deque<sc_lv<32>> biases_q;
+    std::deque<sc_lv<32>> img_q;
 
     void send_packet()
     {
@@ -46,7 +50,6 @@ SC_MODULE(Core)
 
         int done_sending_flag;
 
-
         for (;;)
         {
             if (rst.read() == true)
@@ -58,7 +61,7 @@ SC_MODULE(Core)
                 done_sending_flag = false;
                 pkt_tx == nullptr;
             }
-            else if(pkt_tx == nullptr)
+            else if (pkt_tx == nullptr)
             {
 
                 pkt_tx = nullptr;
@@ -76,7 +79,8 @@ SC_MODULE(Core)
                     src_id = pkt_tx->source_id;
                     dest_id = pkt_tx->dest_id;
                     done_sending_flag = false;
-                    cout << "Core_" << id << " get packet" << "src_id:" << src_id << ", dest_id:" << dest_id << ", num_of_flits:" << num_of_flits << endl;
+                    cout << "Core_" << id << " get packet"
+                         << "src_id:" << src_id << ", dest_id:" << dest_id << ", num_of_flits:" << num_of_flits << endl;
                 }
                 else
                 {
@@ -156,7 +160,7 @@ SC_MODULE(Core)
                 // cout << "Core_" << id << " done sending" << endl;
                 done_sending_flag = true;
                 pkt_tx = nullptr;
-                //reset
+                // reset
                 num_of_flits = 0; // 1 for additional header
                 src_id = 0;
                 dest_id = 0;
@@ -168,12 +172,125 @@ SC_MODULE(Core)
             wait();
         }
     }
+    void gather_and_compute()
+    {
+        for (;;)
+        {
+            if (tail_received_f && pkt_rx != nullptr)
+            {
+                int data_type = pkt_rx->data_type;
+
+                switch (data_type)
+                {
+                case (0): // weights
+                {
+                    weights_q = pkt_rx->datas;
+                    break;
+                }
+                case (1): // biases
+                {
+                    biases_q = pkt_rx->datas;
+                    break;
+                }
+                case (2): // imgs
+                {
+                    img_q = pkt_rx->datas;
+                    break;
+                }
+                default:
+                    break;
+                }
+
+                // start computing if it is imgs
+                if (data_type == 2)
+                {
+                    // compute, wrangle the data into the right format
+                    double *weights = new double[weights_q.size()];
+                    double *biases = new double[biases_q.size()];
+                    double *img = new double[img_q.size()];
+
+                    // convert the sc_lv<32> into double for calculation
+                    for (int i = 0; i < weights_q.size(); i++)
+                    {
+                        // float
+                        float weights_float;
+                        sc_lv<32> weights_sc_lv;
+
+                        weights_sc_lv = weights_q.front();
+                        weights_q.pop_front();
+
+                        weights = sc_lv_to_float(weights_sc_lv);
+
+                        weights[i] = sc_lv_to_float(weights_float);
+                    }
+
+                    // convert bias to double
+                    for (int i = 0; i < biases_q.size(); i++)
+                    {
+                        // float
+                        float biases_float;
+                        sc_lv<32> biases_sc_lv;
+
+                        biases_sc_lv = biases_q.front();
+                        biases_q.pop_front();
+
+                        biases = sc_lv_to_float(biases_sc_lv);
+
+                        biases[i] = sc_lv_to_float(biases_float);
+                    }
+
+                    // convert img to double
+                    for (int i = 0; i < img_q.size(); i++)
+                    {
+                        // float
+                        float img_float;
+                        sc_lv<32> img_sc_lv;
+
+                        img_sc_lv = img_q.front();
+                        img_q.pop_front();
+
+                        img = sc_lv_to_float(img_sc_lv);
+
+                        img[i] = sc_lv_to_float(img_float);
+                    }
+
+                    if (id == 1) img = assymetrical_padding(img);
+
+                    // Do the calculation
+                    switch (id)
+                    {
+                        // Do Conv,relu,mp
+                    case (1):
+                    case (2):
+                    case (6):
+                    {
+                    }
+                        // Do Conv,relu
+                    case (3):
+                    case (7):
+                    {
+                    }
+
+                    // Do FC
+                    case (6):
+                    case (7):
+                    case (8):
+                    {
+                    }
+                    }
+                }
+            }
+        }
+        wait();
+    }
 
     void receive_packet()
     {
         for (;;)
         {
             flit_size_t flit = flit_rx.read();
+            tail_received_f = false;
+
             // ack receive
             if (rst.read() == true)
             {
@@ -185,7 +302,7 @@ SC_MODULE(Core)
             }
             else if (req_rx.read() == true)
             {
-               ack_rx.write(true);
+                ack_rx.write(true);
             }
             else
             {
@@ -212,7 +329,9 @@ SC_MODULE(Core)
                     {
                         pkt_rx->source_id = flit.range(31, 28).to_uint();
                         pkt_rx->dest_id = flit.range(27, 24).to_uint();
-                        //cout << "Core_" << id << " receive header, src_id:" << pkt_rx->source_id << ", dest_id:" << pkt_rx->dest_id << endl;
+                        pkt_rx->data_type = flit.range(23, 22).to_uint();
+
+                        cout << "Core_" << id << " receive header, src_id:" << pkt_rx->source_id << ", dest_id:" << pkt_rx->dest_id << endl;
                     }
                 }
                 else if (flit.range(33, 32) == 0b01) // tail received
@@ -221,18 +340,10 @@ SC_MODULE(Core)
                     float temp = sc_lv_to_float(flit.range(31, 0));
                     if (pkt_rx != nullptr)
                         pkt_rx->datas.push_back(temp);
+
                     cout << "Core_" << id << " receive tail, data:" << temp << endl;
 
-                    // display the whole pckt_rx->datas
-                    //cout << "pkt_rx->source_id:" << pkt_rx->source_id << ", pkt_rx->dest_id:" << pkt_rx->dest_id << endl;
-
-                    // for (int i = 0; i < pkt_rx->datas.size(); i++)
-                    // {
-                    //     cout << "Core_" << id << " receive data:" << pkt_rx->datas[i] << endl;
-                    // }
-
-                    // check the packet
-                    // pe.check_packet(pkt_rx);
+                    tail_received = true;
                 }
                 else
                 {

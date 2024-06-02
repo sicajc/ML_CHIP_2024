@@ -16,7 +16,8 @@ using namespace std;
 struct Packet {
     int source_id;
     int dest_id;
-    vector<float> datas;
+    int data_type;
+    vector<sc_lv<32>> datas;
 };
 
 class PE {
@@ -25,7 +26,7 @@ public:
     Packet* get_packet();
     void check_packet(Packet* p);
     void init(int pe_id);
-    
+
 private:
     int id;
     int send_count;

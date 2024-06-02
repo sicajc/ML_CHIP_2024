@@ -70,11 +70,12 @@ SC_MODULE(Controller)
 
                 switch(state)
                 {
-                    // Receive weights and biases then send data to desired router
+                    // Receive weights,biases & img then send the datas to desired router
                     case(0):
                     {
                         std::deque<sc_lv<32>> weights_q;
                         std::deque<sc_lv<32>> biases_q;
+                        std::deque<sc_lv<32>> img_q;
 
                         int num_of_data = 0;
                         int weights_size = 0;
@@ -168,11 +169,58 @@ SC_MODULE(Controller)
                         biases_q.push_back(data_received);
 
 
+                        cout << "Received biases of layer" <<" with " << num_of_data << " data" << endl;
                         bias_size = num_of_data;
                         data_received = 0;
                         num_of_data = 0;
 
-                        cout << "Received biases of layer" <<" with " << num_of_data << " data" << endl;
+
+                        if(layer_id_cnt == 1)
+                        {
+                            //Receive the img data
+                            // Send req signals to ROM to call for weights
+                            layer_id.write(0);
+                            layer_id_type.write(0);
+                            layer_id_valid.write(1);
+
+                            // Wait for data valid signal
+                            wait();
+                            layer_id_valid = 0;
+
+                            while(data_valid.read()!=1) {
+                                wait();
+                            }
+
+                            //Start receiving imgs
+                            while(data_valid.read()==1)
+                            {
+                                // Read weights and receive the weights
+                                float img_float;
+                                sc_lv<32> img_sc_lv;
+                                img_float = data.read();
+
+                                data_received = float_to_sc_lv(img_float);
+
+                                if(first_data_f == 1)
+                                    img_q.push_back(data_received);
+
+                                num_of_data++;
+                                first_data_f = 1;
+                                wait();
+                            }
+
+                            // Get the last value
+                            // Read weights and receive the weights
+                            float img_float;
+                            sc_lv<32> img_sc_lv;
+                            img_float = data.read();
+
+                            img_q.push_back(data_received);
+
+                            data_received = float_to_sc_lv(weights_float);
+
+                            cout << "Received Imgs with number of "  << num_of_data << " data" << endl;
+                        }
 
                         // Sends packets to Routers
                         // Specify router to send
@@ -188,8 +236,11 @@ SC_MODULE(Controller)
                             default: dst_id = 0; break;
                         }
 
+                        int num_of_pkt = 2;
+                        if(layer_id_cnt == 1) num_of_pkt = 3;
+
                         // Packetlize 0 sends weights, 1 sends biases
-                        for(int send_cnt = 0;send_cnt<2;send_cnt++)
+                        for(int send_cnt = 0;send_cnt<num_of_pkt;send_cnt++)
                         {
                             // Sending value
                             std::deque<sc_lv<32>> datas_q;
@@ -204,15 +255,22 @@ SC_MODULE(Controller)
                                 datas_q = weights_q;
                                 packet_size = weights_q.size();
                             }
-                            else
+                            else if(send_cnt == 1)
                             {
                                 // 0 is bias
                                 packet_type = 0;
                                 datas_q = biases_q;
                                 packet_size = biases_q.size();
                             }
+                            else
+                            {
+                                // 2 is img
+                                packet_type = 2;
+                                datas_q = img_q;
+                                packet_size = img_q.size();
+                            }
 
-                            cout << "Packet size: " << packet_size<<std::endl;
+                            // cout << "Packet size: " << packet_size<<std::endl;
 
                             int flit_counts = 0;
                             // Send to the router that needs the data
@@ -245,7 +303,7 @@ SC_MODULE(Controller)
                                     if(flit_counts == packet_size)
                                     {
                                         // send the tail, dequeue the data
-                                        cout << "Sending tails" <<endl;
+                                        cout << "Controller Sending tails" <<endl;
                                         sc_lv<32> temp;
 
                                         // There is no more data = =
@@ -267,8 +325,8 @@ SC_MODULE(Controller)
                                         temp = datas_q.front();
                                         datas_q.pop_front();
 
-                                        if(flit_counts == 1 || flit_counts == 2)
-                                            cout << "Flit values: "<< temp << endl;
+                                        // if(flit_counts == 1 || flit_counts == 2)
+                                        //     cout << "Flit values: "<< temp << endl;
 
                                         // convert this temp data into sc_lv<32>
                                         flit_size_t body = 0;
@@ -292,14 +350,18 @@ SC_MODULE(Controller)
                         }
 
                         layer_id_cnt++ ;
+
+                        if(layer_id_cnt == 1)
+                        {
+                            state = 1;
+                        }
+
                         break;
                     }
 
                     case(1):
                     {
-                        //Receive and send img
                         break;
-
                     }
 
                     case(2):
