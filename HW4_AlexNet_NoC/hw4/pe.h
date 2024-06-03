@@ -17,7 +17,7 @@ struct Packet {
     int source_id;
     int dest_id;
     int data_type;
-    vector<sc_lv<32>> datas;
+    vector<float> datas;
 };
 
 class PE {

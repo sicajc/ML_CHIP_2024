@@ -4,15 +4,23 @@
 #include <systemc>
 #include <cstring>
 #include "USER_DEFINED_PARAM.h"
+#include "LAYER_PARAM.h"
+#include "utils.h"
 
-//Input a 1d double img
-double* assymetrical_padding(double* img)
+#include <vector>
+typedef std::vector<float> Tensor1d;
+typedef std::vector<std::vector<float>> Tensor2d;
+typedef std::vector<std::vector<std::vector<float>>> Tensor3d;
+typedef std::vector<std::vector<std::vector<std::vector<float>>>> Tensor4d;
+
+//Input a 1d float img
+float* assymetrical_padding(float* img)
 {
     // convert tensor3dImgi to 3dtensor type
     Tensor3d tensor3dImg_i1 = convert1dTo3d(img, INPUT_IMG_CHANNEL, INPUT_IMG_WIDTH, INPUT_IMG_HEIGHT);
     // cout << "Conversion to 3d tensor" << endl;
 
-    Tensor3d cat_img_padded(INPUT_IMG_CHANNEL, std::vector<std::vector<double>>(INPUT_IMG_WIDTH + 3, std::vector<double>(INPUT_IMG_HEIGHT + 3)));
+    Tensor3d cat_img_padded(INPUT_IMG_CHANNEL, std::vector<std::vector<float>>(INPUT_IMG_WIDTH + 3, std::vector<float>(INPUT_IMG_HEIGHT + 3)));
 
     for (int c = 0; c < INPUT_IMG_CHANNEL; ++c)
     {
@@ -26,9 +34,9 @@ double* assymetrical_padding(double* img)
     }
 
     // convert 3d tensor to 1d tensor
-    double *img = convert3dTo1d(cat_img_padded, INPUT_IMG_CHANNEL, INPUT_IMG_WIDTH + 3, INPUT_IMG_HEIGHT + 3);
+    float *img_pad = convert3dTo1d(cat_img_padded, INPUT_IMG_CHANNEL, INPUT_IMG_WIDTH + 3, INPUT_IMG_HEIGHT + 3);
 
-    return img;
+    return img_pad;
 }
 
 void print_sc_lv_as_float(sc_lv<32> val)

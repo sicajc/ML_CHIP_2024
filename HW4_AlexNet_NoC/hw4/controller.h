@@ -173,6 +173,7 @@ SC_MODULE(Controller)
                         bias_size = num_of_data;
                         data_received = 0;
                         num_of_data = 0;
+                        first_data_f = 0;
 
 
                         if(layer_id_cnt == 1)

@@ -70,7 +70,7 @@ public:
                 Tensor3d maxpool1_out = maxpooling(conv1_out, 64, 3, 2);
 
                 // Display conv1 output after relu
-                // displayTensor3d(maxpool1_out, 1, 16, 16, 0, 1, 0, 16, 0, 16);
+                displayTensor3d(maxpool1_out, 1, 16, 16, 0, 1, 0, 16, 0, 16);
 
                 // Write out the value
                 // Convert 3d tensor to 1d tensor

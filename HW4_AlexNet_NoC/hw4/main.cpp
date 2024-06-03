@@ -6,7 +6,7 @@
 #include "controller.h"
 #include "ROM.h"
 using namespace std;
-#define SIM_TIME 250000
+#define SIM_TIME 20
 
 int sc_main(int argc, char *argv[])
 {
@@ -199,7 +199,7 @@ int sc_main(int argc, char *argv[])
     }
 
     // set simulation end time
-    sc_start(SIM_TIME, SC_NS);
+    sc_start(SIM_TIME, SC_MS);
 
     sc_close_vcd_trace_file(tf);
     return 0;
