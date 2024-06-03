@@ -152,6 +152,7 @@ inline void displayTensor4d(const Tensor4d& resized_data, int batch_size, int im
     }
 }
 
+
 inline Tensor4d readAndResizeWeights4d(const std::string& file_directory, int batch_size, int img_channel, int img_width, int img_height) {
     std::ifstream inputFile(file_directory);
     float value;
@@ -237,6 +238,18 @@ inline float* convertTensor1dTo1d(const Tensor1d& input, int tensor_size) {
     return output;
 }
 
+// give me a function which converts 1d float to 2d tensor
+inline Tensor2d convert1dTo2d(const float* input, int rows, int cols) {
+    Tensor2d output(rows, std::vector<float>(cols));
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            output[i][j] = input[i * cols + j];
+        }
+    }
+
+    return output;
+}
 
 
 inline void releaseTensor4dMemory(Tensor4d& tensor) {
