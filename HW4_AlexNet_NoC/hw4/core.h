@@ -421,6 +421,67 @@ SC_MODULE(Core)
                     case (3):
                     case (7):
                     {
+                        int input_img_channel, input_img_size;
+                        int conv_in_channel_num, conv_out_channel_num, conv_kernel_size;
+                        int conv_padding, conv_padding_size, conv_stride;
+
+                        // Parameter selection
+                        if (id == 3)
+                        {
+                            // conv3
+                            input_img_channel = CONV3_IN_CHANNEL_NUM;
+                            input_img_size = CONV3_IN_CHANNEL_SIZE;
+                            conv_out_channel_num = CONV3_OUT_CHANNEL_NUM;
+                            conv_kernel_size = CONV3_KERNEL_SIZE;
+                            conv_stride = CONV3_STRIDE;
+                            conv_padding_size = CONV3_PADDING_SIZE;
+                        }
+                        else
+                        {
+                            // conv4
+                            input_img_channel = CONV4_IN_CHANNEL_NUM;
+                            input_img_size = CONV4_IN_CHANNEL_SIZE;
+                            conv_out_channel_num = CONV4_OUT_CHANNEL_NUM;
+                            conv_kernel_size = CONV4_KERNEL_SIZE;
+                            conv_stride = CONV4_STRIDE;
+                            conv_padding_size = CONV4_PADDING_SIZE;
+                        }
+
+                        // Data wrangling
+                        // Data conversion
+                        Tensor3d input_tensor = convert1dTo3d(img,
+                                                              input_img_channel,
+                                                              input_img_size,
+                                                              input_img_size);
+                        Tensor4d weights_tensor = convert1dTo4d(weights,
+                                                                conv_out_channel_num,
+                                                                conv_in_channel_num,
+                                                                conv_kernel_size,
+                                                                conv_kernel_size);
+                        Tensor1d bias_tensor = convert1dToTensor1d(biases, conv_out_channel_num);
+
+                        // Convolution
+                        Tensor3d conv_out = convolution(input_tensor,
+                                                        weights_tensor,
+                                                        bias_tensor,
+                                                        conv_in_channel_num,
+                                                        conv_out_channel_num,
+                                                        conv_kernel_size,
+                                                        conv_stride,
+                                                        conv_padding_size); // padding = 0 for layer 1
+
+                        // Display conv1 output
+                        // displayTensor3d(conv_out, 1, 16, 16, 0, 1, 0, 16, 0, 16);
+
+                        // RELU
+                        conv_out = reluLayer3d(conv_out);
+
+                        // result
+                        result = conv_out;
+
+                        done_processing_f = true;
+                        wait();
+                        wait();
                     }
 
                     // Do FC
@@ -428,6 +489,45 @@ SC_MODULE(Core)
                     case (5):
                     case (8):
                     {
+                        int output_channel_num;
+                        int input_channel_num;
+
+                        // Parameter selection
+                        if (id == 4)
+                        {
+                            output_channel_num = FC6_OUT_CHANNEL_NUM;
+                            input_channel_num = FC6_IN_CHANNEL_NUM;
+                        }
+                        else if (id == 5)
+                        {
+                            output_channel_num = FC7_OUT_CHANNEL_NUM;
+                            input_channel_num = FC7_IN_CHANNEL_NUM;
+                        }
+                        else
+                        {
+                            output_channel_num = FC8_OUT_CHANNEL_NUM;
+                            input_channel_num = FC8_IN_CHANNEL_NUM;
+                        }
+
+                        // Data conversion
+                        Tensor2d weights_tensor = convert1dTo2d(weights, output_channel_num, input_channel_num);
+                        Tensor1d bias_tensor = convert1dTo1d(bias, output_channel_num);
+                        Tensor1d input_tensor = convert1dToTensor1d(img, output_channel_num);
+
+                        // Note if fc8 dont use relu
+                        if (id == 8)
+                        {
+                            result = fc_layer(input_tensor, weights_tensor, bias_tensor, output_channel_num, input_channel_num);
+                        }
+                        else
+                        {
+                            result = fc_layer(input_tensor, weights_tensor, bias_tensor, output_channel_num, input_channel_num);
+                            result = reluLayer1d(result);
+                        }
+
+                        done_processing_f = true;
+                        wait();
+                        wait();
                     }
                     }
                 }
