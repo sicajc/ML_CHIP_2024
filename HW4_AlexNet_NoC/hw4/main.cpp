@@ -6,7 +6,7 @@
 #include "controller.h"
 #include "ROM.h"
 using namespace std;
-#define SIM_TIME 20
+#define SIM_TIME 5000000
 
 int sc_main(int argc, char *argv[])
 {
@@ -40,7 +40,8 @@ int sc_main(int argc, char *argv[])
     sc_signal<bool> dummy_ack[2];
 
     // Trace file declration for waveform dump
-    sc_trace_file *tf = sc_create_vcd_trace_file("wave");
+    sc_trace_file *tf = nullptr;
+    // sc_trace_file *tf = sc_create_vcd_trace_file("wave");
     sc_trace(tf, clk, "clk");
     sc_trace(tf, rst, "rst");
 

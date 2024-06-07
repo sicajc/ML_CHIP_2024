@@ -71,7 +71,7 @@ SC_MODULE(Core)
             }
             else if (done_processing_f == true)
             {
-                cout << "Packetlizing" << endl;
+                // cout << "Packetlizing" << endl;
                 pkt_tx = new Packet;
 
                 // Setup pkt
@@ -128,7 +128,7 @@ SC_MODULE(Core)
                 dest_id = pkt_tx->dest_id;
                 data_type = pkt_tx->data_type;
                 done_sending_flag = false;
-                cout << "Core_" << id << " get packet"
+                cout << "Core_" << id << " send packet to"
                      << "src_id:" << src_id << ", dest_id:" << dest_id << ", num_of_flits:" << num_of_flits << endl;
                 pkt_tx = nullptr;
 
@@ -173,6 +173,9 @@ SC_MODULE(Core)
 
                         // pop data out from the vector data
                         flit_tx.write(tail);
+
+                        if (id == 6)
+                            cout << "Core_" << id << " Sending tails" << endl;
                     }
                     else
                     {
@@ -208,6 +211,9 @@ SC_MODULE(Core)
                 done_sending_flag = false;
                 pkt_tx == nullptr;
                 start_sending_f = false;
+
+                if (id == 6)
+                    cout << "Core_" << id << " send data cnt:" << flit_counts << endl;
             }
 
             wait();
@@ -220,9 +226,12 @@ SC_MODULE(Core)
         {
             if (tail_received_f == true && pkt_rx != nullptr)
             {
-                cout << "Core_id:" << id << " Receiving" << endl;
 
                 int data_type = pkt_rx->data_type;
+
+                if (id == 5)
+                    cout << "Core_id:" << id << " Receiving"
+                         << "data: " << data_type << endl;
 
                 switch (data_type)
                 {
@@ -243,6 +252,13 @@ SC_MODULE(Core)
                 }
                 default:
                     break;
+                }
+                // print out weights size, bias_q size , img_q size
+                if (id == 5)
+                {
+                    cout << "weights size: " << weights_q.size() << endl;
+                    cout << "biases size: " << biases_q.size() << endl;
+                    cout << "img size: " << img_q.size() << endl;
                 }
 
                 // start computing if it is imgs
@@ -356,7 +372,24 @@ SC_MODULE(Core)
                             break;
                         }
                         case (6):
-                        {
+                        { // Conversion to correct size for processing
+                            input_img_channel = CONV5_IN_CHANNEL_NUM;
+                            input_img_size = CONV5_IN_IMG_SIZE;
+
+                            // conv
+                            conv_out_channel_num = CONV5_OUT_CHANNEL_NUM;
+                            conv_in_channel_num = CONV5_IN_CHANNEL_NUM;
+                            conv_kernel_size = CONV5_KERNEL_SIZE;
+
+                            conv_stride = CONV5_STRIDE;
+                            conv_padding_size = CONV5_PADDING_SIZE;
+
+                            // mp
+                            mp_out_channel_num = MP5_OUT_CHANNEL_NUM;
+                            mp_out_shape = MP5_OUT_SHAPE;
+
+                            mp_kernel_size = MP5_KERNEL_SIZE;
+                            mp_stride = MP5_STRIDE;
                             break;
                         }
                         }
@@ -411,11 +444,14 @@ SC_MODULE(Core)
                         wait();
 
                         // Display conv1 output after relu
-                        displayTensor3d(mp_out, 2, 13, 13, 0, 1, 0, 8, 0, 8);
+                        // displayTensor3d(mp_out, 2, 13, 13, 0, 1, 0, 8, 0, 8);
 
-                        // delete conv1_weights and biases;
+                        // delete conv1_weights and biases and input
+                        // release input tensor
+                        releaseTensor3dMemory(input_tensor);
                         releaseTensor1dMemory(bias_tensor);
                         releaseTensor4dMemory(weights_tensor);
+                        break;
                     }
                     // Do Conv,relu
                     case (3):
@@ -430,7 +466,7 @@ SC_MODULE(Core)
                         {
                             // conv3
                             input_img_channel = CONV3_IN_CHANNEL_NUM;
-                            input_img_size = MP2_OUT_SHAPE;
+                            input_img_size = CONV3_IN_IMG_SIZE;
                             conv_out_channel_num = CONV3_OUT_CHANNEL_NUM;
                             conv_kernel_size = CONV3_KERNEL_SIZE;
                             conv_stride = CONV3_STRIDE;
@@ -440,7 +476,7 @@ SC_MODULE(Core)
                         {
                             // conv4
                             input_img_channel = CONV4_IN_CHANNEL_NUM;
-                            input_img_size = CONV3_OUT_CHANNEL_NUM;
+                            input_img_size = CONV4_IN_IMG_SIZE;
                             conv_out_channel_num = CONV4_OUT_CHANNEL_NUM;
                             conv_kernel_size = CONV4_KERNEL_SIZE;
                             conv_stride = CONV4_STRIDE;
@@ -460,6 +496,9 @@ SC_MODULE(Core)
                                                                 conv_kernel_size);
                         Tensor1d bias_tensor = convert1dToTensor1d(biases, conv_out_channel_num);
 
+                        // Core id finish processing convolution
+                        cout << "Core_" << id << " start processing convolution" << endl;
+
                         // Convolution
                         Tensor3d conv_out = convolution(input_tensor,
                                                         weights_tensor,
@@ -471,10 +510,13 @@ SC_MODULE(Core)
                                                         conv_padding_size); // padding = 0 for layer 1
 
                         // Display conv1 output
-                        // displayTensor3d(conv_out, 1, 16, 16, 0, 1, 0, 16, 0, 16);
+                        displayTensor3d(conv_out, 1, 13, 13, 0, 1, 0, 8, 0, 8);
 
                         // RELU
                         conv_out = reluLayer3d(conv_out);
+
+                        // Core id finish processing convolution
+                        cout << "Core_" << id << " start processing " << endl;
 
                         // Convert3d to 1d float
                         result = convert3dTo1dVec(conv_out,
@@ -482,9 +524,17 @@ SC_MODULE(Core)
                                                   input_img_size,
                                                   input_img_size);
 
+                        cout << "Core_" << id << " Processing Done" << endl;
                         done_processing_f = true;
+
+                        // release input tensor, weights and biases
+                        releaseTensor3dMemory(input_tensor);
+                        releaseTensor1dMemory(bias_tensor);
+                        releaseTensor4dMemory(weights_tensor);
+
                         wait();
                         wait();
+                        break;
                     }
 
                     // Do FC
@@ -495,16 +545,19 @@ SC_MODULE(Core)
                         int output_channel_num;
                         int input_channel_num;
 
+                        // cout core id start processing
+                        cout << "Core_" << id << " ==================Start processing FC=======================" << endl;
+
                         // Parameter selection
                         if (id == 4)
                         {
-                            output_channel_num = FC6_OUT_NUM;
-                            input_channel_num = FC6_IN_NUM;
+                            output_channel_num = FC7_OUT_NUM;
+                            input_channel_num = FC7_IN_NUM;
                         }
                         else if (id == 5)
                         {
-                            output_channel_num = FC7_OUT_NUM;
-                            input_channel_num = FC7_IN_NUM;
+                            output_channel_num = FC6_OUT_NUM;
+                            input_channel_num = FC6_IN_NUM;
                         }
                         else
                         {
@@ -513,24 +566,47 @@ SC_MODULE(Core)
                         }
 
                         // Data conversion
-                        Tensor2d weights_tensor = convert1dTo2d(weights, output_channel_num, input_channel_num);
+                        Tensor2d weights_tensor = convert1dTo2d(weights,
+                                                                output_channel_num,
+                                                                input_channel_num);
+
                         Tensor1d bias_tensor = convert1dToTensor1d(biases, output_channel_num);
-                        Tensor1d input_tensor = convert1dToTensor1d(img, output_channel_num);
+
+                        Tensor1d input_tensor = convert1dToTensor1d(img,img_q.size());
 
                         // Note if fc8 dont use relu
                         if (id == 8)
                         {
-                            result = fc_layer(input_tensor, weights_tensor, bias_tensor, output_channel_num, input_channel_num);
+                            result = fc_layer(input_tensor,
+                                              weights_tensor,
+                                              bias_tensor,
+                                              input_channel_num,
+                                              output_channel_num);
                         }
                         else
                         {
-                            result = fc_layer(input_tensor, weights_tensor, bias_tensor, output_channel_num, input_channel_num);
+                            result = fc_layer(input_tensor,
+                                              weights_tensor,
+                                              bias_tensor,
+                                              input_channel_num,
+                                              output_channel_num);
                             result = reluLayer1d(result);
                         }
+                        // core id finish processing fc
+                        cout << "Core_" << id << " finish processing FC" << endl;
 
                         done_processing_f = true;
                         wait();
                         wait();
+                        // release input  weights and biases
+                        releaseTensor2dMemory(weights_tensor);
+                        releaseTensor1dMemory(bias_tensor);
+
+                        // release input_Tensor
+                        releaseTensor1dMemory(input_tensor);
+
+
+                        break;
                     }
                     }
                 }
@@ -587,7 +663,7 @@ SC_MODULE(Core)
                         pkt_rx->dest_id = flit.range(27, 24).to_uint();
                         pkt_rx->data_type = flit.range(23, 22).to_uint();
 
-                        cout << "Core_" << id << " receive header, src_id:" << pkt_rx->source_id << ", dest_id:" << pkt_rx->dest_id << ", data type: " << pkt_rx->data_type << endl;
+                        // cout << "Core_" << id << " receive header, src_id:" << pkt_rx->source_id << ", dest_id:" << pkt_rx->dest_id << ", data type: " << pkt_rx->data_type << endl;
                     }
                 }
                 else if (flit.range(33, 32) == 0b01) // tail received
@@ -597,7 +673,8 @@ SC_MODULE(Core)
                     if (pkt_rx != nullptr)
                         pkt_rx->datas.push_back(temp);
 
-                    cout << "Core_" << id << " receive tail, data:" << temp << endl;
+                    if (id == 5)
+                        cout << "Core_" << id << " receive tail, data:" << temp << endl;
 
                     tail_received_f = true;
                 }

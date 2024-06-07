@@ -11,7 +11,7 @@ O = run
 C = *.cpp *.o
 
 all:
-	g++ -I . -I  $(INC_DIR) -L . -L $(LIB_DIR) -o $(O) $(C) $(LIB) $(RPATH)
+	g++ -O3 -I . -I $(INC_DIR) -L . -L $(LIB_DIR) -o $(O) $(C) $(LIB) $(RPATH)
 	./run
 
 nWave_ON:

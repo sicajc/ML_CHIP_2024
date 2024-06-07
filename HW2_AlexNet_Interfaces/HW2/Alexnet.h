@@ -184,7 +184,6 @@ SC_MODULE(ALEXNET)
                 double *fc8_out = fc8_out_fifo.read();
 
                 // convertTensor1dTo1d
-
                 Tensor1d softmax_out = softmax(convert1dToTensor1d(fc8_out, 1000));
 
                 // output the softmax value and out valid
