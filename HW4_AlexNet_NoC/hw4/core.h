@@ -440,7 +440,7 @@ SC_MODULE(Core)
                         {
                             // conv4
                             input_img_channel = CONV4_IN_CHANNEL_NUM;
-                            input_img_size = CONV4_IN_CHANNEL_SIZE;
+                            input_img_size = CONV3_OUT_CHANNEL_NUM;
                             conv_out_channel_num = CONV4_OUT_CHANNEL_NUM;
                             conv_kernel_size = CONV4_KERNEL_SIZE;
                             conv_stride = CONV4_STRIDE;
