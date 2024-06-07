@@ -495,23 +495,23 @@ SC_MODULE(Core)
                         // Parameter selection
                         if (id == 4)
                         {
-                            output_channel_num = FC6_OUT_CHANNEL_NUM;
-                            input_channel_num = FC6_IN_CHANNEL_NUM;
+                            output_channel_num = FC6_OUT_NUM;
+                            input_channel_num = FC6_IN_NUM;
                         }
                         else if (id == 5)
                         {
-                            output_channel_num = FC7_OUT_CHANNEL_NUM;
-                            input_channel_num = FC7_IN_CHANNEL_NUM;
+                            output_channel_num = FC7_OUT_NUM;
+                            input_channel_num = FC7_IN_NUM;
                         }
                         else
                         {
-                            output_channel_num = FC8_OUT_CHANNEL_NUM;
-                            input_channel_num = FC8_IN_CHANNEL_NUM;
+                            output_channel_num = FC8_OUT_NUM;
+                            input_channel_num = FC8_IN_NUM;
                         }
 
                         // Data conversion
                         Tensor2d weights_tensor = convert1dTo2d(weights, output_channel_num, input_channel_num);
-                        Tensor1d bias_tensor = convert1dTo1d(bias, output_channel_num);
+                        Tensor1d bias_tensor = convert1dToTensor1d(bias, output_channel_num);
                         Tensor1d input_tensor = convert1dToTensor1d(img, output_channel_num);
 
                         // Note if fc8 dont use relu
