@@ -430,7 +430,7 @@ SC_MODULE(Core)
                         {
                             // conv3
                             input_img_channel = CONV3_IN_CHANNEL_NUM;
-                            input_img_size = CONV3_IN_CHANNEL_SIZE;
+                            input_img_size = MP2_OUT_SHAPE;
                             conv_out_channel_num = CONV3_OUT_CHANNEL_NUM;
                             conv_kernel_size = CONV3_KERNEL_SIZE;
                             conv_stride = CONV3_STRIDE;
@@ -476,8 +476,11 @@ SC_MODULE(Core)
                         // RELU
                         conv_out = reluLayer3d(conv_out);
 
-                        // result
-                        result = conv_out;
+                        // Convert3d to 1d float
+                        result = convert3dTo1dVec(conv_out,
+                                                  conv_out_channel_num,
+                                                  input_img_size,
+                                                  input_img_size);
 
                         done_processing_f = true;
                         wait();
@@ -511,7 +514,7 @@ SC_MODULE(Core)
 
                         // Data conversion
                         Tensor2d weights_tensor = convert1dTo2d(weights, output_channel_num, input_channel_num);
-                        Tensor1d bias_tensor = convert1dToTensor1d(bias, output_channel_num);
+                        Tensor1d bias_tensor = convert1dToTensor1d(biases, output_channel_num);
                         Tensor1d input_tensor = convert1dToTensor1d(img, output_channel_num);
 
                         // Note if fc8 dont use relu
