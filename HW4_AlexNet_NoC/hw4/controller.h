@@ -533,7 +533,6 @@ SC_MODULE(Controller)
                     // change back to default color
                     cout << "\033[0m";
 
-                    sc_stop();
                     break;
                 }
                 }

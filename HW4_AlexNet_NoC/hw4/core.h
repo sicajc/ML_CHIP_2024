@@ -407,9 +407,11 @@ SC_MODULE(Core)
                         Tensor1d bias_tensor = convert1dToTensor1d(biases, conv_out_channel_num);
 
                         // display img,weights and bias
-                        // displayTensor3d(input_tensor, 3, 227, 227, 0, 1, 224, 227, 224, 227);
+                        // displayTensor3d(input_tensor, 3, 227, 227, 0, 1, 0, 5, 0, 5);
                         // display bias
                         // display1DTensorVec(bias_tensor,10);
+                        // displayTensor3d(conv_out, 1, 10, 10, 0, 1, 0, 5, 0, 5);
+
 
                         // Convolution
                         Tensor3d conv_out = convolution(input_tensor,
@@ -422,10 +424,13 @@ SC_MODULE(Core)
                                                         conv_padding_size); // padding = 0 for layer 1
 
                         // Display conv1 output
-                        // displayTensor3d(conv_out, 1, 16, 16, 0, 1, 0, 16, 0, 16);
+                        // display current id
+                        // cout << "Current pe's convolution out : " << id << endl;
+
 
                         // RELU
                         conv_out = reluLayer3d(conv_out);
+                        // displayTensor3d(conv_out, 2, 20, 20, 0, 1, 0, 20, 0, 20);
 
                         // Maxpooling
                         Tensor3d mp_out = maxpooling(conv_out,
@@ -467,7 +472,9 @@ SC_MODULE(Core)
                             // conv3
                             input_img_channel = CONV3_IN_CHANNEL_NUM;
                             input_img_size = CONV3_IN_IMG_SIZE;
+
                             conv_out_channel_num = CONV3_OUT_CHANNEL_NUM;
+                            conv_in_channel_num = CONV3_IN_CHANNEL_NUM;
                             conv_kernel_size = CONV3_KERNEL_SIZE;
                             conv_stride = CONV3_STRIDE;
                             conv_padding_size = CONV3_PADDING_SIZE;
@@ -477,7 +484,9 @@ SC_MODULE(Core)
                             // conv4
                             input_img_channel = CONV4_IN_CHANNEL_NUM;
                             input_img_size = CONV4_IN_IMG_SIZE;
+
                             conv_out_channel_num = CONV4_OUT_CHANNEL_NUM;
+                            conv_in_channel_num = CONV4_IN_CHANNEL_NUM;
                             conv_kernel_size = CONV4_KERNEL_SIZE;
                             conv_stride = CONV4_STRIDE;
                             conv_padding_size = CONV4_PADDING_SIZE;
@@ -495,9 +504,15 @@ SC_MODULE(Core)
                                                                 conv_kernel_size,
                                                                 conv_kernel_size);
                         Tensor1d bias_tensor = convert1dToTensor1d(biases, conv_out_channel_num);
-
                         // Core id finish processing convolution
-                        cout << "Core_" << id << " start processing convolution" << endl;
+                        // cout << "Core_" << id << " start processing convolution" << endl;
+
+                        // display input tensor
+                        // displayTensor3d(input_tensor, 2, 13, 13, 0, 1, 0, 8, 0, 8);
+
+                        // display bias tensor
+                        // display1DTensorVec(bias_tensor,10);
+
 
                         // Convolution
                         Tensor3d conv_out = convolution(input_tensor,
@@ -509,14 +524,18 @@ SC_MODULE(Core)
                                                         conv_stride,
                                                         conv_padding_size); // padding = 0 for layer 1
 
-                        // Display conv1 output
-                        displayTensor3d(conv_out, 1, 13, 13, 0, 1, 0, 8, 0, 8);
+                        // cout << "pe_" << id <<" Convolution relu : "<< endl;
+                        // displayTensor3d(conv_out, 1, 13, 13, 0, 1, 0, 5, 0, 5);
 
                         // RELU
                         conv_out = reluLayer3d(conv_out);
 
+                        // Display conv1 output
+                        // cout << "pe_" << id <<" Convolution relu : "<< endl;
+                        // displayTensor3d(conv_out, 1, 13, 13, 0, 1, 0, 5, 0, 5);
+
                         // Core id finish processing convolution
-                        cout << "Core_" << id << " start processing " << endl;
+                        // cout << "Core_" << id << " start processing " << endl;
 
                         // Convert3d to 1d float
                         result = convert3dTo1dVec(conv_out,
@@ -524,7 +543,7 @@ SC_MODULE(Core)
                                                   input_img_size,
                                                   input_img_size);
 
-                        cout << "Core_" << id << " Processing Done" << endl;
+                        // cout << "Core_" << id << " Processing Done" << endl;
                         done_processing_f = true;
 
                         // release input tensor, weights and biases
@@ -594,6 +613,9 @@ SC_MODULE(Core)
                         }
                         // core id finish processing fc
                         cout << "Core_" << id << " finish processing FC" << endl;
+
+                        // DISPLAY fc
+                        display1DTensorVec(result,10);
 
                         done_processing_f = true;
                         wait();
