@@ -6,7 +6,7 @@
 typedef sc_lv<34> flit_size_t;
 
 // Encoding for directions
-// Core 0, East 1, north 2,west 3,south 4
+// 0: North, 1: East, 2: South, 3: West, 4: Core
 static const int CORE = 0;
 static const int EAST = 1;
 static const int NORTH = 2;
