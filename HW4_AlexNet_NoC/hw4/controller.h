@@ -532,6 +532,8 @@ SC_MODULE(Controller)
                     cout << "======================Alexnet ends=========================================" << endl;
                     // change back to default color
                     cout << "\033[0m";
+                    
+                    sc_stop();
 
                     break;
                 }
