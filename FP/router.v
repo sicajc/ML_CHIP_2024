@@ -5,11 +5,11 @@ module Router#(parameter id = 0)(
            input rst,
 
            // Output channels
-           output[33:0] reg out_flit_N,
-           output[33:0] reg out_flit_E,
-           output[33:0] reg out_flit_S,
-           output[33:0] reg out_flit_W,
-           output[33:0] reg out_flit_Core,
+           output reg[33:0] out_flit_N,
+           output reg[33:0] out_flit_E,
+           output reg[33:0] out_flit_S,
+           output reg[33:0] out_flit_W,
+           output reg[33:0] out_flit_Core,
 
            output reg out_req_N,
            output reg out_req_E,
@@ -222,7 +222,7 @@ begin
                         if(cur_x == dst_x && cur_y == dst_y)
                         begin
                             // core
-                            cur_dir == 0;
+                            cur_dir = 0;
                         end
                         else if(d_x != 0)
                         begin
