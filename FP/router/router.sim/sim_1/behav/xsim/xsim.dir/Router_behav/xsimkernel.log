@@ -1,0 +1,4 @@
+Running: xsim.dir/Router_behav/xsimk.exe -simmode gui -wdb Router_behav.wdb -simrunnum 0 -socket 58131
+Design successfully loaded
+Design Loading Memory Usage: 8248 KB (Peak: 8248 KB)
+Design Loading CPU Usage: 0 ms

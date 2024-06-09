@@ -43,7 +43,7 @@ module Router#(parameter id = 0)(
            output reg out_ack_Core
        );
 
-reg[33:0] in_flit_ff[0:4];
+reg[33:0] in_flit[0:4];
 
 reg out_req_ff[0:4];
 reg out_req_wr[0:4];
@@ -52,6 +52,7 @@ reg out_ack_ff[0:4];
 reg out_ack_wr[0:4];
 
 reg in_req[0:4];
+reg in_ack[0:4];
 
 reg[33:0] out_flit_ff[0:4];
 reg[33:0] out_flit_wr[0:4];
@@ -101,6 +102,13 @@ begin
     out_ack_N = out_ack_ff[2];
     out_ack_W = out_ack_ff[3];
     out_ack_S = out_ack_ff[4];
+
+    // in_ack connection
+    in_ack[0] = in_ack_Core;
+    in_ack[1] = in_ack_E;
+    in_ack[2] = in_ack_N;
+    in_ack[3] = in_ack_W;
+    in_ack[4] = in_ack_S;
 end
 
 integer i;
@@ -216,8 +224,8 @@ begin
                         dst_x = dst_id %4;
                         dst_y = dst_id / 4;
 
-                        d_x = abs_diff(cur_x-dst_x);
-                        d_y = abs_diff(cur_y-dst_y);
+                        d_x = abs_diff(cur_x,dst_x);
+                        d_y = abs_diff(cur_y,dst_y);
 
                         if(cur_x == dst_x && cur_y == dst_y)
                         begin
@@ -226,8 +234,8 @@ begin
                         end
                         else if(d_x != 0)
                         begin
-                            cost_east = abs_diff((4+cur_x+1)%4-dst_x);
-                            cost_west = abs_diff((4+cur_x-1)%4-dst_x);
+                            cost_east = abs_diff((4+cur_x+1)%4,dst_x);
+                            cost_west = abs_diff((4+cur_x-1)%4,dst_x);
 
                             if(cost_east < cost_west)
                             begin
@@ -243,8 +251,8 @@ begin
                         else
                         begin
                             //determine going north or south
-                            cost_north = abs_diff((4+cur_y-1)%4-dst_y);
-                            cost_south = abs_diff((4+cur_y+1)%4-dst_y);
+                            cost_north = abs_diff((4+cur_y-1)%4,dst_y);
+                            cost_south = abs_diff((4+cur_y+1)%4,dst_y);
 
                             if(cost_north < cost_south)
                             begin
