@@ -4,38 +4,42 @@ module Router#(parameter id = 0)(
            input clk,
            input rst,
 
-           // Output channels
+           // Output channels, out_flit[5]
            output reg[33:0] out_flit_N,
            output reg[33:0] out_flit_E,
            output reg[33:0] out_flit_S,
            output reg[33:0] out_flit_W,
            output reg[33:0] out_flit_Core,
 
+           // out_Req[5]
            output reg out_req_N,
            output reg out_req_E,
            output reg out_req_S,
            output reg out_req_W,
            output reg out_req_Core,
 
+           // in_ack[5]
            input in_ack_N,
            input in_ack_E,
            input in_ack_S,
            input in_ack_W,
            input in_ack_Core,
 
-           // Input Channels
+           // Input Channels, in_flit[5]
            input[33:0] in_flit_N,
            input[33:0] in_flit_E,
            input[33:0] in_flit_S,
            input[33:0] in_flit_W,
            input[33:0] in_flit_Core,
 
+           // in_req[5]
            input in_req_N,
            input in_req_E,
            input in_req_S,
            input in_req_W,
            input in_req_Core,
 
+           //out_ack[5]
            output reg out_ack_N,
            output reg out_ack_E,
            output reg out_ack_S,
@@ -72,7 +76,7 @@ reg[31:0] flit_sources_wr[0:4];
 
 always @(*)
 begin
-    // Core 0, East 1, north 2,west 3,south 4
+    // Core 0, East 1, north 2,west 3,south 3
     in_flit[0] = in_flit_Core;
     in_flit[1] = in_flit_E;
     in_flit[2] = in_flit_N;
@@ -155,7 +159,7 @@ reg[33:0] in_buf_flit;
 
 // computing variables
 reg[31:0] dst_id;
-reg[31:0] cur_x,cur_y,dst_x,dst_y,d_x,d_y,cur_dir,cost_east,cost_west,cost_north,cost_south;
+reg signed[31:0] cur_x,cur_y,dst_x,dst_y,d_x,d_y,cur_dir,cost_east,cost_west,cost_north,cost_south;
 
 reg break_flag;
 
@@ -176,44 +180,46 @@ begin
         flit_sources_wr[i] = flit_sources_ff[i];
     end
 
-    cur_x = id % 4;
-    cur_y = id / 4;
+    cost_north = 0;
+    cost_east = 0;
+    cost_south = 0;
+    cost_west = 0;
+
+    cur_x = id % 3;
+    cur_y = id / 3;
 
     for(output_port_dir = 0; output_port_dir <5; output_port_dir = output_port_dir + 1)
     begin
         if(out_buf_busy_wr[output_port_dir] == 1) // output port is busy, things to transfer
         begin
-            out_req_wr[output_port_dir] = 1;
-
             output_port_flit = out_buf_wr[output_port_dir];
             current_flit_source = flit_sources_wr[output_port_dir];
-
-            out_flit_wr[output_port_dir] = out_buf_wr[output_port_dir];
 
             if((output_port_flit[32] == 1) && in_ack[output_port_dir] == 1)
             begin
                 out_buf_busy_wr[output_port_dir] = 0;
                 out_req_wr[output_port_dir] = 0;
-                out_flit_wr[output_port_dir] = 0;
                 out_ack_wr[output_port_dir] = 0;
+                out_flit_wr[output_port_dir] = out_buf_wr[output_port_dir];
             end
             else if(in_ack[output_port_dir] == 1)
             begin
                 out_buf_wr[output_port_dir] = in_flit[current_flit_source];
                 out_flit_wr[output_port_dir] = out_buf_wr[output_port_dir];
                 out_ack_wr[current_flit_source] = 1;
+                out_req_wr[output_port_dir] = 1;
             end
             else
             begin
                 out_ack_wr[output_port_dir] = 0;
+                out_req_wr[output_port_dir] = 1;
             end
         end
         else // find new packet
         begin
-            break_flag = 0;
             for(input_buf_dir = 0; input_buf_dir < 5;input_buf_dir = input_buf_dir + 1)
             begin
-                if(in_req[input_buf_dir] == 1 && break_flag != 1)
+                if(in_req[input_buf_dir] == 1)
                 begin
                     in_buf_flit = in_flit[input_buf_dir];
 
@@ -221,11 +227,10 @@ begin
                     begin
                         dst_id = in_buf_flit[27:24];
 
-                        dst_x = dst_id %4;
-                        dst_y = dst_id / 4;
+                        dst_x = dst_id % 3;
+                        dst_y = dst_id / 3;
 
                         d_x = abs_diff(cur_x,dst_x);
-                        d_y = abs_diff(cur_y,dst_y);
 
                         if(cur_x == dst_x && cur_y == dst_y)
                         begin
@@ -234,8 +239,8 @@ begin
                         end
                         else if(d_x != 0)
                         begin
-                            cost_east = abs_diff((4+cur_x+1)%4,dst_x);
-                            cost_west = abs_diff((4+cur_x-1)%4,dst_x);
+                            cost_east = abs_diff((3+cur_x+1)%3,dst_x);
+                            cost_west = abs_diff((3+cur_x-1)%3,dst_x);
 
                             if(cost_east < cost_west)
                             begin
@@ -251,8 +256,8 @@ begin
                         else
                         begin
                             //determine going north or south
-                            cost_north = abs_diff((4+cur_y-1)%4,dst_y);
-                            cost_south = abs_diff((4+cur_y+1)%4,dst_y);
+                            cost_north = abs_diff((3+cur_y-1)%3,dst_y);
+                            cost_south = abs_diff((3+cur_y+1)%3,dst_y);
 
                             if(cost_north < cost_south)
                             begin
@@ -270,18 +275,17 @@ begin
                     // See if the port header matches the port direction also if it is free
                     if(cur_dir == output_port_dir && out_buf_busy_wr[output_port_dir] == 0)
                     begin
-                        out_buf_busy_wr[output_port_dir] = 1;
-                        flit_sources_wr[output_port_dir] = input_buf_dir;
 
-                        src_current_dir_wr[output_port_dir] = cur_dir;
 
                         out_buf_wr[output_port_dir] = in_flit[input_buf_dir];
-
                         out_req_wr[output_port_dir] = 1;
                         out_flit_wr[output_port_dir] = out_buf_wr[output_port_dir];
-
                         out_ack_wr[input_buf_dir] = 1;
-                        break_flag = 1;
+
+
+                        flit_sources_wr[output_port_dir] = input_buf_dir;
+                        out_buf_busy_wr[output_port_dir] = 1;
+                        src_current_dir_wr[output_port_dir] = cur_dir;
                     end
                 end
             end
@@ -291,8 +295,8 @@ end
 
 // Give me a function which calculates the absolute value of two variables
 function [31:0] abs_diff;
-    input [31:0] a;
-    input [31:0] b;
+    input signed [31:0] a;
+    input signed [31:0] b;
     begin
         if(a > b)
             abs_diff = a - b;

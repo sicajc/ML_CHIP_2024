@@ -3,6 +3,7 @@
 #include "pe.h"
 #include <deque>
 #include "systemc.h"
+#include "USER_DEFINED_PARAM.h"
 using namespace std;
 
 SC_MODULE(Controller)
@@ -248,22 +249,22 @@ SC_MODULE(Controller)
                         dst_id = 2;
                         break;
                     case (3):
-                        dst_id = 3;
-                        break;
-                    case (4):
-                        dst_id = 7;
-                        break;
-                    case (5):
-                        dst_id = 6;
-                        break;
-                    case (6):
                         dst_id = 5;
                         break;
-                    case (7):
+                    case (4):
+                        dst_id = 8;
+                        break;
+                    case (5):
+                        dst_id = 7;
+                        break;
+                    case (6):
                         dst_id = 4;
                         break;
+                    case (7):
+                        dst_id = 3;
+                        break;
                     case (8):
-                        dst_id = 8;
+                        dst_id = 6;
                         break;
                     default:
                         dst_id = 0;
@@ -532,7 +533,7 @@ SC_MODULE(Controller)
                     cout << "======================Alexnet ends=========================================" << endl;
                     // change back to default color
                     cout << "\033[0m";
-                    
+
                     sc_stop();
 
                     break;

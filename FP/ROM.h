@@ -30,7 +30,7 @@ SC_MODULE(ROM)
     {
         // Constructor
         DATA_PATH = "./data/";      // Please change this to your own data path
-        IMAGE_FILE_NAME = "dog.txt"; // You can change this to test another image file
+        IMAGE_FILE_NAME = "cat.txt"; // You can change this to test another image file
 
         SC_THREAD(run);
         sensitive << clk.pos() << rst.neg();

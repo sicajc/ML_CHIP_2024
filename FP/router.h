@@ -27,9 +27,10 @@ SC_MODULE(Router)
     sc_out<bool> out_ack[5];
 
     sc_signal<bool> out_buf_busy[5];
+    sc_signal<bool> in_buf_busy[5];
 
     flit_size_t out_buf[5];
-
+    flit_size_t in_buf[5];
     int src_current_dir[5]; // Used to store the current direction of the input buf
     int flit_sources[5];    // used to store the source of flit for each output ports
 
@@ -47,8 +48,10 @@ SC_MODULE(Router)
                 {
                     out_buf_busy[i] = false;
                     out_buf[i] = 0;
+                    in_buf[i] = 0;
                     src_current_dir[i] = 0;
                     flit_sources[i] = 0;
+                    in_buf_busy[i] = false;
                     //signal reset
                     out_flit[i].write(0);
                     out_req[i].write(false);
@@ -116,11 +119,11 @@ SC_MODULE(Router)
                                     // Extract information
                                     int dst_id = in_buf_flit.range(27, 24).to_uint();
 
-                                    int cur_x = this->id % 4;
-                                    int cur_y = this->id / 4;
+                                    int cur_x = this->id % 3;
+                                    int cur_y = this->id / 3;
 
-                                    int dst_x = dst_id % 4;
-                                    int dst_y = dst_id / 4;
+                                    int dst_x = dst_id % 3;
+                                    int dst_y = dst_id / 3;
 
                                     int d_x = std::abs(cur_x - dst_x);
                                     int d_y = std::abs(cur_y - dst_y);
@@ -136,8 +139,8 @@ SC_MODULE(Router)
                                     else if (d_x != 0) // check if reached
                                     {
                                         // determine going east or west
-                                        int cost_east = std::abs((4 + cur_x + 1) % 4 - dst_x);
-                                        int cost_west = std::abs((4 + cur_x - 1) % 4 - dst_x);
+                                        int cost_east = std::abs((3 + cur_x + 1) % 3 - dst_x);
+                                        int cost_west = std::abs((3 + cur_x - 1) % 3 - dst_x);
 
                                         if (cost_east <= cost_west)
                                         {
@@ -151,8 +154,8 @@ SC_MODULE(Router)
                                     else
                                     {
                                         // destermine going north or south
-                                        int cost_north = std::abs((4 + cur_y - 1) % 4 - dst_y);
-                                        int cost_south = std::abs((4 + cur_y + 1) % 4 - dst_y);
+                                        int cost_north = std::abs((3 + cur_y - 1) % 3 - dst_y);
+                                        int cost_south = std::abs((3 + cur_y + 1) % 3 - dst_y);
 
                                         if (cost_north <= cost_south)
                                         {
@@ -224,9 +227,9 @@ SC_MODULE(Router)
             sc_trace(tf, out_flit[i], "R_" + to_string(id) + ".out_flit_" + to_string(i));
             sc_trace(tf, out_req[i], "R_" + to_string(id) + ".out_req_" + to_string(i));
             sc_trace(tf, out_ack[i], "R_" + to_string(id) + ".out_ack_" + to_string(i));
-
             // Inner signals
             sc_trace(tf, out_buf_busy[i], "R_" + to_string(id) + ".out_busy_" + to_string(i));
+            sc_trace(tf, in_buf_busy[i], "R_" + to_string(id) + ".in_buf_busy_" + to_string(i));
             sc_trace(tf, out_buf[i], "R_" + to_string(id) + ".out_buf_" + to_string(i));
         }
     }

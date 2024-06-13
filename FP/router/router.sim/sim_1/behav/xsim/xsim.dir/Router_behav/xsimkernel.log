@@ -2,3 +2,6 @@ Running: xsim.dir/Router_behav/xsimk.exe -simmode gui -wdb Router_behav.wdb -sim
 Design successfully loaded
 Design Loading Memory Usage: 8248 KB (Peak: 8248 KB)
 Design Loading CPU Usage: 0 ms
+Simulation completed
+Simulation Memory Usage: 9008 KB (Peak: 9008 KB)
+Simulation CPU Usage: 15 ms

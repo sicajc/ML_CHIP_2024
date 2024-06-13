@@ -23,17 +23,17 @@ int sc_main(int argc, char *argv[])
     sc_signal<float> data;
     sc_signal<bool> data_valid;
 
-    sc_signal<sc_lv<34>> c_r_flit[4][4][2];
-    sc_signal<bool> c_r_req[4][4][2];
-    sc_signal<bool> c_r_ack[4][4][2];
+    sc_signal<sc_lv<34>> c_r_flit[3][3][2];
+    sc_signal<bool> c_r_req[3][3][2];
+    sc_signal<bool> c_r_ack[3][3][2];
 
-    sc_signal<sc_lv<34>> r_r_flit_h[4][4][2];
-    sc_signal<bool> r_r_req_h[4][4][2];
-    sc_signal<bool> r_r_ack_h[4][4][2];
+    sc_signal<sc_lv<34>> r_r_flit_h[3][3][2];
+    sc_signal<bool> r_r_req_h[3][3][2];
+    sc_signal<bool> r_r_ack_h[3][3][2];
 
-    sc_signal<sc_lv<34>> r_r_flit_v[4][4][2];
-    sc_signal<bool> r_r_req_v[4][4][2];
-    sc_signal<bool> r_r_ack_v[4][4][2];
+    sc_signal<sc_lv<34>> r_r_flit_v[3][3][2];
+    sc_signal<bool> r_r_req_v[3][3][2];
+    sc_signal<bool> r_r_ack_v[3][3][2];
 
     sc_signal<sc_lv<34>> dummy_flit[2];
     sc_signal<bool> dummy_req[2];
@@ -51,17 +51,17 @@ int sc_main(int argc, char *argv[])
     Clock m_clock("m_clock", 10);
     Reset m_reset("m_reset", 15);
 
-    // instantiate 16 cores and 16 routers as 4x4 array
-    Core *m_core[4][4];
-    Router *m_router[4][4];
+    // Now it is 9 cores and 9 routers as 3x3 array
+    Core *m_core[3][3];
+    Router *m_router[3][3];
     Controller *m_controller;
     ROM *m_ROM;
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 3; i++)
     {
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < 3; j++)
         {
-            int id = i * 4 + j;
+            int id = i * 3 + j;
             // Router(sc_module_name name, int id, sc_trace_file *tf = nullptr) : sc_module(name), id(id)
             m_core[i][j] = new Core(("m_core_" + to_string(id)).c_str(), id, tf);
             m_router[i][j] = new Router(("m_router_" + to_string(id)).c_str(), id, tf);
@@ -89,9 +89,9 @@ int sc_main(int argc, char *argv[])
     m_ROM->data_valid(data_valid);
 
     // connect all controller routers and cores
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 3; i++)
     {
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < 3; j++)
         {
             // Connect rst and clk
             m_core[i][j]->clk(clk);
@@ -172,13 +172,13 @@ int sc_main(int argc, char *argv[])
             m_router[i][j]->in_ack[WEST](r_r_ack_h[i][j][1]);
 
             // Connect Routers Horizontally
-            m_router[i][j]->in_flit[EAST](r_r_flit_h[i][(j + 1) % 4][1]);
-            m_router[i][j]->in_req[EAST](r_r_req_h[i][(j + 1) % 4][1]);
-            m_router[i][j]->out_ack[EAST](r_r_ack_h[i][(j + 1) % 4][1]);
+            m_router[i][j]->in_flit[EAST](r_r_flit_h[i][(j + 1) % 3][1]);
+            m_router[i][j]->in_req[EAST](r_r_req_h[i][(j + 1) % 3][1]);
+            m_router[i][j]->out_ack[EAST](r_r_ack_h[i][(j + 1) % 3][1]);
 
-            m_router[i][j]->in_flit[WEST](r_r_flit_h[i][(j + 3) % 4][0]);
-            m_router[i][j]->in_req[WEST](r_r_req_h[i][(j + 3) % 4][0]);
-            m_router[i][j]->out_ack[WEST](r_r_ack_h[i][(j + 3) % 4][0]);
+            m_router[i][j]->in_flit[WEST](r_r_flit_h[i][(j + 2) % 3][0]);
+            m_router[i][j]->in_req[WEST](r_r_req_h[i][(j + 2) % 3][0]);
+            m_router[i][j]->out_ack[WEST](r_r_ack_h[i][(j + 2) % 3][0]);
 
             // Connect Routers Horizontally
             m_router[i][j]->out_flit[SOUTH](r_r_flit_v[i][j][0]);
@@ -189,13 +189,13 @@ int sc_main(int argc, char *argv[])
             m_router[i][j]->out_req[NORTH](r_r_req_v[i][j][1]);
             m_router[i][j]->in_ack[NORTH](r_r_ack_v[i][j][1]);
 
-            m_router[i][j]->in_flit[SOUTH](r_r_flit_v[(i + 1) % 4][j][1]);
-            m_router[i][j]->in_req[SOUTH](r_r_req_v[(i + 1) % 4][j][1]);
-            m_router[i][j]->out_ack[SOUTH](r_r_ack_v[(i + 1) % 4][j][1]);
+            m_router[i][j]->in_flit[SOUTH](r_r_flit_v[(i + 1) % 3][j][1]);
+            m_router[i][j]->in_req[SOUTH](r_r_req_v[(i + 1) % 3][j][1]);
+            m_router[i][j]->out_ack[SOUTH](r_r_ack_v[(i + 1) % 3][j][1]);
 
-            m_router[i][j]->in_flit[NORTH](r_r_flit_v[(i + 3) % 4][j][0]);
-            m_router[i][j]->in_req[NORTH](r_r_req_v[(i + 3) % 4][j][0]);
-            m_router[i][j]->out_ack[NORTH](r_r_ack_v[(i + 3) % 4][j][0]);
+            m_router[i][j]->in_flit[NORTH](r_r_flit_v[(i + 2) % 3][j][0]);
+            m_router[i][j]->in_req[NORTH](r_r_req_v[(i + 2) % 3][j][0]);
+            m_router[i][j]->out_ack[NORTH](r_r_ack_v[(i + 2) % 3][j][0]);
         }
     }
 
