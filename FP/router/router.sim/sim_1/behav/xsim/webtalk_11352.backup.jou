@@ -2,12 +2,11 @@
 # Webtalk v2021.1 (64-bit)
 # SW Build 3247384 on Thu Jun 10 19:36:33 MDT 2021
 # IP Build 3246043 on Fri Jun 11 00:30:35 MDT 2021
-# Start of session at: Fri Jun 14 01:56:37 2024
-# Process ID: 20140
+# Start of session at: Fri Jun 14 01:56:14 2024
+# Process ID: 11352
 # Current directory: C:/Users/HIBIKI/Desktop/ML_CHIP_2024/FP/ROUTER/ROUTER.sim/sim_1/behav/xsim
 # Command line: wbtcv.exe -mode batch -source C:/Users/HIBIKI/Desktop/ML_CHIP_2024/FP/ROUTER/ROUTER.sim/sim_1/behav/xsim/xsim.dir/Router_behav/webtalk/xsim_webtalk.tcl -notrace
 # Log file: C:/Users/HIBIKI/Desktop/ML_CHIP_2024/FP/ROUTER/ROUTER.sim/sim_1/behav/xsim/webtalk.log
 # Journal file: C:/Users/HIBIKI/Desktop/ML_CHIP_2024/FP/ROUTER/ROUTER.sim/sim_1/behav/xsim\webtalk.jou
 #-----------------------------------------------------------
 source C:/Users/HIBIKI/Desktop/ML_CHIP_2024/FP/ROUTER/ROUTER.sim/sim_1/behav/xsim/xsim.dir/Router_behav/webtalk/xsim_webtalk.tcl -notrace
-INFO: [Common 17-206] Exiting Webtalk at Fri Jun 14 01:56:38 2024...
