@@ -5,7 +5,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <LAYER_PARAM.h>
 
 typedef std::vector<float> Tensor1d;
 typedef std::vector<std::vector<float>> Tensor2d;

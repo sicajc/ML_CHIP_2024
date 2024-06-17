@@ -4,12 +4,18 @@
 #include "systemc.h"
 #include "pe.h"
 #include <cstring>
-#include <helperfunction.h>
+// #include <helperfunction.h>
 #include <deque>
 #include "utils.h"
 #include "conv_functions.h"
 #include "LAYER_PARAM.h"
 using namespace std;
+
+typedef std::vector<float> Tensor1d;
+typedef std::vector<std::vector<float>> Tensor2d;
+typedef std::vector<std::vector<std::vector<float>>> Tensor3d;
+typedef std::vector<std::vector<std::vector<std::vector<float>>>> Tensor4d;
+typedef sc_lv<34> flit_size_t;
 
 // The core interfaces, build lookup table here!
 SC_MODULE(Core)
@@ -29,6 +35,7 @@ SC_MODULE(Core)
     // PE pe;
 
     int id;
+
     bool tail_received_f = false;
 
     Packet *pkt_tx, *pkt_rx;
@@ -44,6 +51,60 @@ SC_MODULE(Core)
 
     bool done_processing_f = false;
     bool start_sending_f = true;
+
+    // Input a 1d float img
+    float *assymetrical_padding(float *img)
+    {
+        // convert tensor3dImgi to 3dtensor type
+        Tensor3d tensor3dImg_i1 = convert1dTo3d(img, INPUT_IMG_CHANNEL, INPUT_IMG_WIDTH, INPUT_IMG_HEIGHT);
+        // cout << "Conversion to 3d tensor" << endl;
+
+        Tensor3d cat_img_padded(INPUT_IMG_CHANNEL, std::vector<std::vector<float>>(INPUT_IMG_WIDTH + 3, std::vector<float>(INPUT_IMG_HEIGHT + 3)));
+
+        for (int c = 0; c < INPUT_IMG_CHANNEL; ++c)
+        {
+            for (int w = 0; w < INPUT_IMG_WIDTH; ++w)
+            {
+                for (int h = 0; h < INPUT_IMG_HEIGHT; ++h)
+                {
+                    cat_img_padded[c][w + 2][h + 2] = tensor3dImg_i1[c][w][h];
+                }
+            }
+        }
+
+        // convert 3d tensor to 1d tensor
+        float *img_pad = convert3dTo1d(cat_img_padded, INPUT_IMG_CHANNEL, INPUT_IMG_WIDTH + 3, INPUT_IMG_HEIGHT + 3);
+
+        return img_pad;
+    }
+
+    void print_sc_lv_as_float(sc_lv<32> val)
+    {
+        uint32_t int_val = val.to_uint();
+        float float_val;
+        memcpy(&float_val, &int_val, sizeof(int_val));
+
+        cout << "sc_lv<32> as float: " << float_val << endl;
+    }
+
+    // give me a function which converts float to sc_lv<32>
+    sc_lv<32> float_to_sc_lv(float val)
+    {
+        uint32_t int_val;
+        memcpy(&int_val, &val, sizeof(val));
+
+        return int_val;
+    }
+
+    // give me a function which converts sc_lv<32> to float
+    float sc_lv_to_float(sc_lv<32> val)
+    {
+        uint32_t int_val = val.to_uint();
+        float float_val;
+        memcpy(&float_val, &int_val, sizeof(int_val));
+
+        return float_val;
+    }
 
     void send_packet()
     {
@@ -229,24 +290,24 @@ SC_MODULE(Core)
 
                 int data_type = pkt_rx->data_type;
 
-                // if (id == 5)
-                //     cout << "Core_id:" << id << " Receiving"
-                //          << "data: " << data_type << endl;
 
                 switch (data_type)
                 {
                 case (1): // weights
                 {
                     weights_q = pkt_rx->datas;
+                    cout << "Core_id:" << id << " Receiving weights " << endl;
                     break;
                 }
                 case (0): // biases
                 {
+                    cout << "Core_id:" << id << " Receiving biases " << endl;
                     biases_q = pkt_rx->datas;
                     break;
                 }
                 case (2): // imgs
                 {
+                    cout << "Core_id:" << id << " Receiving Imgs " << endl;
                     img_q = pkt_rx->datas;
                     break;
                 }
@@ -256,9 +317,9 @@ SC_MODULE(Core)
                 // print out weights size, bias_q size , img_q size
                 // if (id == 5)
                 // {
-                //     cout << "weights size: " << weights_q.size() << endl;
-                //     cout << "biases size: " << biases_q.size() << endl;
-                //     cout << "img size: " << img_q.size() << endl;
+                cout << "weights size: " << weights_q.size() << endl;
+                cout << "biases size: " << biases_q.size() << endl;
+                cout << "img size: " << img_q.size() << endl;
                 // }
 
                 // start computing if it is imgs
@@ -406,14 +467,11 @@ SC_MODULE(Core)
                                                                 conv_kernel_size);
                         Tensor1d bias_tensor = convert1dToTensor1d(biases, conv_out_channel_num);
 
-
-
                         cout << "Current pe's convolution out : " << id << endl;
                         // display img,weights and bias
                         // displayTensor3d(input_tensor, 3, 227, 227, 0, 1, 0, 5, 0, 5);
                         // display bias
                         // display1DTensorVec(bias_tensor,10);
-
 
                         // Convolution
                         Tensor3d conv_out = convolution(input_tensor,
@@ -427,7 +485,6 @@ SC_MODULE(Core)
 
                         // Display conv1 output
                         // display current id
-
 
                         // RELU
                         conv_out = reluLayer3d(conv_out);
@@ -514,7 +571,6 @@ SC_MODULE(Core)
                         // display bias tensor
                         // display1DTensorVec(bias_tensor,10);
 
-
                         // Convolution
                         Tensor3d conv_out = convolution(input_tensor,
                                                         weights_tensor,
@@ -592,7 +648,7 @@ SC_MODULE(Core)
 
                         Tensor1d bias_tensor = convert1dToTensor1d(biases, output_channel_num);
 
-                        Tensor1d input_tensor = convert1dToTensor1d(img,img_q.size());
+                        Tensor1d input_tensor = convert1dToTensor1d(img, img_q.size());
 
                         // Note if fc8 dont use relu
                         if (id == 6)
@@ -616,7 +672,7 @@ SC_MODULE(Core)
                         cout << "Core_" << id << " finish processing FC" << endl;
 
                         // DISPLAY fc
-                        display1DTensorVec(result,10);
+                        display1DTensorVec(result, 10);
 
                         done_processing_f = true;
                         wait();
@@ -627,7 +683,6 @@ SC_MODULE(Core)
 
                         // release input_Tensor
                         releaseTensor1dMemory(input_tensor);
-
 
                         break;
                     }
@@ -682,11 +737,13 @@ SC_MODULE(Core)
                         cout << "Core_" << id << " ERROR: header received while receiving packet" << endl;
                     else
                     {
+
                         pkt_rx->source_id = flit.range(31, 28).to_uint();
                         pkt_rx->dest_id = flit.range(27, 24).to_uint();
                         pkt_rx->data_type = flit.range(23, 22).to_uint();
 
-                        // cout << "Core_" << id << " receive header, src_id:" << pkt_rx->source_id << ", dest_id:" << pkt_rx->dest_id << ", data type: " << pkt_rx->data_type << endl;
+                        cout << "Core_" << id << " receive header, src_id:" << pkt_rx->source_id << ", dest_id:" << pkt_rx->dest_id << ", data type: " << pkt_rx->data_type << endl;
+                        cout << "flit:" << flit << endl;
                     }
                 }
                 else if (flit.range(33, 32) == 0b01) // tail received
@@ -696,8 +753,7 @@ SC_MODULE(Core)
                     if (pkt_rx != nullptr)
                         pkt_rx->datas.push_back(temp);
 
-                    // if (id == 5)
-                    //     cout << "Core_" << id << " receive tail, data:" << temp << endl;
+                    cout << "Core_" << id << " receive tail, data:" << temp << endl;
 
                     tail_received_f = true;
                 }
@@ -718,14 +774,13 @@ SC_MODULE(Core)
     //=============================================================================
     // For File dumping & Constructor
     //=============================================================================
-    SC_CTOR(Core);
+    SC_HAS_PROCESS(Core);
 
-    Core(sc_module_name name, int id, sc_trace_file *tf = nullptr) : sc_module(name), id(id)
+    Core(sc_module_name name, int id) : sc_module(name), id(id)
     {
         // constructor
         // pe.init(id);
         this->id = id;
-        this->tf = tf;
 
         SC_THREAD(send_packet);
         dont_initialize();
@@ -738,16 +793,6 @@ SC_MODULE(Core)
         SC_THREAD(receive_packet);
         dont_initialize();
         sensitive << clk.pos();
-
-        // trace and dump the signals in a hierarchical way
-        sc_trace(tf, clk, "core_" + to_string(id) + ".clk"); // the dump signal would be named as core_0.clk
-        sc_trace(tf, rst, "core_" + to_string(id) + ".rst");
-        sc_trace(tf, flit_rx, "core_" + to_string(id) + ".flit_rx");
-        sc_trace(tf, req_rx, "core_" + to_string(id) + ".req_rx");
-        sc_trace(tf, ack_rx, "core_" + to_string(id) + ".ack_rx");
-        sc_trace(tf, flit_tx, "core_" + to_string(id) + ".flit_tx");
-        sc_trace(tf, req_tx, "core_" + to_string(id) + ".req_tx");
-        sc_trace(tf, ack_tx, "core_" + to_string(id) + ".ack_tx");
     }
 };
 

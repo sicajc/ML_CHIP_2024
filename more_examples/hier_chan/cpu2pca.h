@@ -17,7 +17,7 @@ SC_MODULE(cpu2pca), CPU_if
   sc_out<unsigned long> a;     // address
   sc_inout_rv<32> d;           // data
   // Constructor
-  SC_CTOR(cpu2pca) : FLOAT(sc_string("0xZZZZZZZZ"))
+  (cpu2pca) : FLOAT(sc_string("0xZZZZZZZZ"))
   {
     // SC_THREAD(cpu2pca_thread);
     // sensitive << ck;

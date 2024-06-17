@@ -3,7 +3,9 @@
 #include "pe.h"
 #include <deque>
 #include "systemc.h"
-#include "USER_DEFINED_PARAM.h"
+#include "conv_functions.h"
+#include "helperfunction.h"
+#include "utils.h"
 using namespace std;
 
 SC_MODULE(Controller)
@@ -44,7 +46,7 @@ SC_MODULE(Controller)
     sc_signal<sc_lv<32>> data_float;
     bool tail_received_f = false;
 
-    std::string file_dir = "./data/";
+    std::string file_dir = "/home/2024MLChip/mlchip040/FP_3X3_VERSION/data/";
 
     void run()
     {
@@ -156,6 +158,7 @@ SC_MODULE(Controller)
                     while (data_valid.read() != 1)
                         wait();
 
+                    int cnt = 0;
                     // Start receiving biases
                     while (data_valid.read() == 1)
                     {
@@ -168,8 +171,14 @@ SC_MODULE(Controller)
 
                         // Read biases and receive the biases
                         if (first_data_f == 1)
+                        {
                             biases_q.push_back(data_received);
+                            // if(cnt < 5)
+                                // cout << "Biases: " << data_received << "\n";
 
+                        }
+
+                        cnt++;
                         first_data_f = 1;
                         num_of_data++;
                         wait();
@@ -279,6 +288,8 @@ SC_MODULE(Controller)
                     for (int send_cnt = 0; send_cnt < num_of_pkt; send_cnt++)
                     {
                         // Sending value
+
+                        // Sending value
                         std::deque<sc_lv<32>> datas_q;
                         int packet_type;
                         int packet_size;
@@ -286,14 +297,16 @@ SC_MODULE(Controller)
                         // First send weights then biases
                         if (send_cnt == 0)
                         {
-                            // 1 is weight
+                            // 0 is weight
                             packet_type = 1;
+                            cout << "Controller Sending weights to pe: " << dst_id << endl;
                             datas_q = weights_q;
                             packet_size = weights_q.size();
                         }
                         else if (send_cnt == 1)
                         {
-                            // 0 is bias
+                            // 1 is bias
+                            cout << "Controller Sending biases to pe: " << dst_id << endl;
                             packet_type = 0;
                             datas_q = biases_q;
                             packet_size = biases_q.size();
@@ -301,6 +314,7 @@ SC_MODULE(Controller)
                         else
                         {
                             // 2 is img
+                            cout << "Controller Sending img to pe: " << dst_id << endl;
                             packet_type = 2;
                             datas_q = img_q;
                             packet_size = img_q.size();
@@ -388,6 +402,7 @@ SC_MODULE(Controller)
                     }
 
                     layer_id_cnt++;
+                    // while(true) wait();
 
                     if (layer_id_cnt == 9)
                     {
@@ -548,34 +563,12 @@ SC_MODULE(Controller)
     //=============================================================================
     // For File dumping & Constructor
     //=============================================================================
-    SC_CTOR(Controller);
-
-    Controller(sc_module_name name, sc_trace_file *tf = nullptr) : sc_module(name)
+    SC_CTOR(Controller)
     {
         // Constructor
         SC_THREAD(run);
         dont_initialize();
         sensitive << clk.pos();
-
-        // trace signals
-        sc_trace(tf, rst, "m_controller.rst");
-        sc_trace(tf, clk, "m_controller.clk");
-
-        sc_trace(tf, layer_id, "m_controller.layer_id");
-        sc_trace(tf, layer_id_type, "m_controller.layer_id_type");
-        sc_trace(tf, layer_id_valid, "m_controller.layer_id_valid");
-
-        sc_trace(tf, data_received, "m_controller.data_received");
-        sc_trace(tf, data_float, "m_controller.data_float");
-        sc_trace(tf, data_valid, "m_controller.data_valid");
-
-        sc_trace(tf, flit_tx, "m_controller.flit_tx");
-        sc_trace(tf, req_tx, "m_controller.req_tx");
-        sc_trace(tf, ack_tx, "m_controller.ack_tx");
-
-        sc_trace(tf, flit_rx, "m_controller.flit_rx");
-        sc_trace(tf, req_rx, "m_controller.req_rx");
-        sc_trace(tf, ack_rx, "m_controller.ack_rx");
     }
 };
 #endif
