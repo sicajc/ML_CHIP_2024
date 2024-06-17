@@ -26,3 +26,12 @@ https://camdemy.com/media/24319
 ## ZTH Zurich Onur Mutlu Computer Architecture
 https://www.youtube.com/watch?v=jnJpbZUKrJ4&t=8197s
 https://www.youtube.com/watch?v=rksmfG_5fXo
+
+## Cornell ML Hardware
+https://www.youtube.com/watch?v=Y-dFytEPSw8&list=PL0mFAhrXqy9CuopJhAB8GVu_Oy7J0ery6&index=6
+
+https://www.youtube.com/watch?v=Nvox0Q0ohlw&list=PL0mFAhrXqy9CuopJhAB8GVu_Oy7J0ery6&index=8&t=2322s
+
+https://www.youtube.com/watch?v=CDHdn44fF2Y&list=PL0mFAhrXqy9CuopJhAB8GVu_Oy7J0ery6&index=9
+
+https://www.youtube.com/watch?v=YxIAVDnD8oo&list=PL0mFAhrXqy9CuopJhAB8GVu_Oy7J0ery6&index=14
